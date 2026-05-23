@@ -1,0 +1,74 @@
+# ---------------------------------------------------------------------------
+# LumiRead .gitignore — long-term defense against committing private artifacts.
+# Mirrors the exclusion list in the project's internal PUBLIC_MANIFEST.
+# ---------------------------------------------------------------------------
+
+# Gradle / build outputs
+.gradle/
+build/
+**/build/
+out/
+.kotlin/
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+captures/
+
+# Local environment
+local.properties
+*.local
+*.env
+
+# Signing keys / credentials (must never be committed)
+*.jks
+*.keystore
+keystore.properties
+*.p12
+*.pem
+*.pfx
+*-----BEGIN-*
+
+# Models — users download these on first launch, they do NOT belong in git
+models/
+*.litertlm
+*.task
+*.onnx
+*.bin
+*.tflite
+libs/sherpa-onnx-*.aar
+
+# Built artifacts
+*.apk
+*.aab
+*.dex
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Logs / temp / Claude Code session data (must never be committed)
+*.log
+*.session
+scratch/
+tmp/
+temp/
+.claude/
+
+# Process / planning documents that live only in the private working copy
+docs/FACTS.md
+docs/PROGRESS.md
+docs/ASSUMPTIONS.md
+docs/RESEARCH.md
+docs/PUBLIC_MANIFEST.md
+docs/spikes/
+
+# One-shot verification scaffolds (their conclusions are promoted into core/)
+spike/
+
+# Misc
+*.bak
+*.orig
+*.rej

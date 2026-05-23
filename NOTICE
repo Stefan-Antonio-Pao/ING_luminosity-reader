@@ -1,0 +1,57 @@
+LumiRead
+Copyright 2026 LagrangeNSS
+
+This product includes software developed at LagrangeNSS.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+================================================================================
+Third-party components — please see THIRD_PARTY_NOTICES.md for the complete list
+of dependencies, their copyright holders, licenses, and source links.
+================================================================================
+
+This product bundles or interoperates with the following Apache-2.0 licensed
+components. Their original NOTICE/attribution lines are reproduced below as
+required by Apache-2.0 §4(d).
+
+--------------------------------------------------------------------------------
+Gemma 4 (model weights, downloaded by the end user at first launch)
+Copyright 2026 Google LLC.
+Licensed under the Apache License, Version 2.0.
+Source: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
+        https://ai.google.dev/gemma
+
+--------------------------------------------------------------------------------
+LiteRT-LM (on-device LLM runtime)
+Copyright 2025-2026 Google LLC.
+Licensed under the Apache License, Version 2.0.
+Source: https://github.com/google-ai-edge/LiteRT-LM
+
+--------------------------------------------------------------------------------
+sherpa-onnx (on-device TTS runtime)
+Copyright 2023-2026 Xiaomi Corporation / k2-fsa.
+Licensed under the Apache License, Version 2.0.
+Source: https://github.com/k2-fsa/sherpa-onnx
+
+--------------------------------------------------------------------------------
+ML Kit (Text Recognition v2 / Image Labeling / Language Identification)
+Copyright Google LLC. Distributed as a proprietary SDK; use is governed by the
+Google APIs Terms of Service and the ML Kit Terms of Service. NOT open source.
+Reference: https://developers.google.com/ml-kit
+
+--------------------------------------------------------------------------------
+AndroidX libraries (Jetpack Compose, CameraX, DataStore, Room, Lifecycle, etc.)
+Copyright The Android Open Source Project.
+Licensed under the Apache License, Version 2.0.
+Source: https://developer.android.com/jetpack/androidx
+
+--------------------------------------------------------------------------------
+Kotlin standard library and kotlinx.coroutines
+Copyright 2010-2026 JetBrains s.r.o. and Kotlin contributors.
+Licensed under the Apache License, Version 2.0.
+Source: https://github.com/JetBrains/kotlin
+        https://github.com/Kotlin/kotlinx.coroutines
