@@ -321,7 +321,7 @@ including license texts and source links.
 
 A heartfelt thank-you to Google for releasing Gemma 4 under a real
 open-source license, and to the LiteRT-LM team for making it usable on
-real consumer phones inside the 6-month window of this hackathon.
+real consumer phones inside the half-month window of this hackathon.
 
 ---
 
