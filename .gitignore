@@ -1,6 +1,5 @@
 # ---------------------------------------------------------------------------
-# LumiRead .gitignore — long-term defense against committing private artifacts.
-# Mirrors the exclusion list in the project's internal PUBLIC_MANIFEST.
+# LumiRead .gitignore — defense against committing private artifacts.
 # ---------------------------------------------------------------------------
 
 # Gradle / build outputs
@@ -49,7 +48,7 @@ libs/sherpa-onnx-*.aar
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 
-# Logs / temp / Claude Code session data (must never be committed)
+# Logs / temp / dev-tooling session data (must never be committed)
 *.log
 *.session
 scratch/
@@ -67,6 +66,10 @@ docs/spikes/
 
 # One-shot verification scaffolds (their conclusions are promoted into core/)
 spike/
+
+# Internal task prompts (never publish)
+Claude_Code_*_Prompt.md
+Claude_Code_*Prompt.md
 
 # Misc
 *.bak

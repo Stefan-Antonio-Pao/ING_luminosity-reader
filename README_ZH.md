@@ -1,33 +1,34 @@
-<div align="right">
-
-[English](./README.md) | **简体中文**
-
-</div>
-
-# LumiRead 光语伴读
+<p align="center">
+  <img src="art/icon.png" alt="LumiRead" width="160" height="160" />
+</p>
+<h1 align="center">LumiRead · 光语伴读</h1>
+<p align="center"><a href="./README.md">English</a> | <b>简体中文</b></p>
 
 > 一款完全离线、隐私优先的儿童绘本伴读 App,核心由端侧 **Gemma 4 E2B**
 > 驱动。每一次拍照、每一句回答,都不离开手机。
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%2026%2B-3DDC84.svg)](#4-系统要求)
-[![Powered by](https://img.shields.io/badge/powered%20by-Gemma%204%20E2B-FF6F00.svg)](https://ai.google.dev/gemma)
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License" /></a>
+  <a href="#5-系统要求"><img src="https://img.shields.io/badge/platform-Android%2026%2B-3DDC84.svg" alt="Platform" /></a>
+  <a href="https://ai.google.dev/gemma"><img src="https://img.shields.io/badge/powered%20by-Gemma%204%20E2B-FF6F00.svg" alt="Powered by Gemma 4 E2B" /></a>
+</p>
 
 ---
 
 ## 目录
 
 1. [项目概览](#1-项目概览)
-2. [功能特性](#2-功能特性)
-3. [工作原理](#3-工作原理)
-4. [系统要求](#4-系统要求)
-5. [安装与运行(普通用户)](#5-安装与运行普通用户)
-6. [自行构建(开发者)](#6-自行构建开发者)
-7. [隐私](#7-隐私)
-8. [开源致谢](#8-开源致谢)
-9. [许可证](#9-许可证)
-10. [参与贡献](#10-参与贡献)
-11. [Roadmap](#11-roadmap)
+2. [普惠初心](#2-普惠初心)
+3. [功能特性](#3-功能特性)
+4. [工作原理](#4-工作原理)
+5. [系统要求](#5-系统要求)
+6. [安装与运行(普通用户)](#6-安装与运行普通用户)
+7. [自行构建(开发者)](#7-自行构建开发者)
+8. [隐私](#8-隐私)
+9. [开源致谢](#9-开源致谢)
+10. [许可证](#10-许可证)
+11. [参与贡献](#11-参与贡献)
+12. [Roadmap](#12-roadmap)
 
 ---
 
@@ -61,29 +62,55 @@ LumiRead 是一款 Android 应用,把任意一本**纸质绘本**变成一位
 
 ---
 
-## 2. 功能特性
+## 2. 普惠初心
 
-v1.0.0 真实可用、已端到端跑通的功能:
+LumiRead **完全在设备本地运行**。模型一次性下载后,使用过程**无需联网、无需账号、无需服务器**——AI 伴读老师就住在手机里。
+
+- **没有网络的地方也能用。** 在偏远山区、乡村学校,或任何信号微弱、没有移动数据的地方,LumiRead 都能离线工作。孩子的学习,不该止步于网络覆盖的边缘。
+- **不产生持续费用。** 没有订阅、没有按次计费的云端 API、没有上传服务器的流量账单。装好之后,每一个故事都是免费的。
+- **隐私由设计保证。** 孩子翻拍的绘本与开口的回答,全程不离开本机。
+
+通过把一个有能力的语言模型搬到端侧,LumiRead 希望把温暖的、苏格拉底式的阅读陪伴,带给那些被云端应用落下的家庭与课堂。
+
+---
+
+## 3. 功能特性
+
+v1.2.0 真实可用、已端到端跑通的功能:
 
 - **拍页伴读。** 单张拍照、对齐取景框,App 给出一段语音化的
   "夸赞 → 详细解释 → 拓展提问",紧扣画面与文字。
+- **双模式 UI(儿童 / 家长)。** 全 App 的主题切换:**儿童模式**走
+  卡通形状、深蓝+暖金色板、圆润的**站酷快乐体**(ZCOOL KuaiLe)、
+  按下回弹动效与吉祥物;**家长模式**回到极简的 Material 3 表面,
+  覆盖设置、模型管理与"我的学习"。一道**轻量家长门**(从两个数中
+  点中较大的——完全离线、不存密码)守在儿童 → 家长方向,防止孩子
+  误退出卡通壳。
 - **中英文双语输出。** 输出语言是 App 内的设置,**与系统语言解耦**:
   中文系统的手机可以朗读英文页面,反之亦然。
+- **双语成对输出模式。** 可选"同一句先中文后英文、逐行配对"渲染,
+  方便希望两种语言同屏出现的家庭与课堂。
+- **App 界面语言独立切换。** 通过 `LocaleManagerCompat` 桥接的
+  per-app locale(跟随系统 / 中文 / English),无需改系统设置即可
+  翻转界面语言。
 - **三档年龄段。** *Toddler(幼儿)* / *Preschool(学龄前)* /
-  *Preadolescent(学龄)*,每档都会改变词汇、句长以及 TTS 的语速语调。
+  *Preadolescent(学龄)*,每档都会改变词汇、句长、TTS 语速,
+  以及儿童模式下的触控目标尺寸与回弹幅度。
 - **多轮对话。** 同一页可以反复聊;也可以换一本继续 —— 模型携带
   一段滚动历史。
 - **无书直聊。** 没书在手时,伴读伙伴可以编一个温暖、积极的故事开头,
   邀请孩子接龙。
+- **自动 / 手动朗读切换。** 自动朗读会逐句流式播报;关闭后每条回复
+  附"▶ 播放"按钮,由孩子自主决定何时听。
 - **"我的学习"页面。** 本地完整记录学习时长、累计次数、使用的语言、
   近期会话条目。**不上传任何数据。**
 - **OCR 模式设置。** 默认走两阶段管线(ML Kit 端侧 OCR + 图像打标 +
-  纯文本 Gemma 4),为最低首词延迟优化;此外提供
-  *原生多模态* 实验入口,在设置里有明确的延迟提示。
+  纯文本 Gemma 4),为最低首词延迟优化;此外提供基于 Gemma 4 E4B
+  的*原生多模态* 实验入口,在设置里有明确的延迟提示。
 
 ---
 
-## 3. 工作原理
+## 4. 工作原理
 
 ```
  ┌──────────┐     ┌────────────────────┐     ┌────────────────────┐
@@ -125,7 +152,7 @@ Kotlin/JVM 模块,通过若干小接口(`LlmEngine` / `TtsEngine` /
 
 ---
 
-## 4. 系统要求
+## 5. 系统要求
 
 | 项目 | 最低 | 推荐 |
 |---|---|---|
@@ -140,17 +167,20 @@ Kotlin/JVM 模块,通过若干小接口(`LlmEngine` / `TtsEngine` /
 
 ---
 
-## 5. 安装与运行(普通用户)
+## 6. 安装与运行(普通用户)
 
-### 5.1 安装 APK
+### 6.1 安装 APK
 
 1. 从 [GitHub Releases](https://github.com/LagrangeNSS/LumiRead/releases)
    下载 `app-release.apk`。
 2. 对照 Release 说明中的 SHA-256 校验文件。
 3. 在手机上安装(可能需要在"设置 → 安装未知应用"里给一次权限)。
-   APK **仅几十 MB 量级**,**不包含** Gemma 4 模型权重。
+   APK **约 290 MB**,体积主要来自打包的 LiteRT-LM、sherpa-onnx、
+   ML Kit、ONNX-Runtime **原生库**,且为四种 ABI(`armeabi-v7a`、
+   `arm64-v8a`、`x86`、`x86_64`)都各带一份。**不包含** Gemma 4 模型
+   权重,也不包含 MeloTTS 声学模型。
 
-### 5.2 首次启动 —— 下载模型
+### 6.2 首次启动 —— 下载模型
 
 首次启动时,App 会引导你下载:
 
@@ -160,7 +190,7 @@ Kotlin/JVM 模块,通过若干小接口(`LlmEngine` / `TtsEngine` /
 - **MeloTTS 声学模型**(`vits-melo-tts-zh_en`),**约 189 MB**。
 - 之后即可在飞行模式下使用,App 不再有任何网络调用。
 
-### 5.3 评测者 / 慢网兜底 —— `adb push` 直接侧载
+### 6.3 评测者 / 慢网兜底 —— `adb push` 直接侧载
 
 不想在 App 内下载,可以用 `adb`:
 
@@ -176,9 +206,9 @@ App 启动时会自动检测到文件并跳过下载步骤。
 
 ---
 
-## 6. 自行构建(开发者)
+## 7. 自行构建(开发者)
 
-### 6.1 工具链
+### 7.1 工具链
 
 | 工具 | 版本 |
 |---|---|
@@ -188,7 +218,7 @@ App 启动时会自动检测到文件并跳过下载步骤。
 | Android SDK | platform 36 / build-tools 36.x |
 | Gradle | 走 wrapper(`./gradlew`) |
 
-### 6.2 克隆与配置
+### 7.2 克隆与配置
 
 ```bash
 git clone https://github.com/LagrangeNSS/LumiRead.git
@@ -198,7 +228,7 @@ cd LumiRead
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 ```
 
-### 6.3 获取 sherpa-onnx AAR
+### 7.3 获取 sherpa-onnx AAR
 
 `sherpa-onnx` 不在 Maven Central,工程通过本地 `libs/` 目录引入:
 
@@ -207,7 +237,7 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 3. 放到仓库根目录下的 `libs/sherpa-onnx-1.13.2.aar`(`libs/` 不存在则
    自行创建)。
 
-### 6.4 获取模型
+### 7.4 获取模型
 
 模型文件**不进**本仓库,也**不打入** Release APK,完整留给最终用户
 在自己设备上获取。
@@ -227,10 +257,10 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
   https://github.com/k2-fsa/sherpa-onnx/releases
   (找 `vits-melo-tts-zh_en` 那个压缩包),解压到 `./models/`。
 
-如需在真机上直接跳过 App 内下载,用 §5.3 的 `adb push` 命令侧载到
+如需在真机上直接跳过 App 内下载,用 §6.3 的 `adb push` 命令侧载到
 `/sdcard/Android/data/com.lumiread/files/`。
 
-### 6.5 构建与运行
+### 7.5 构建与运行
 
 ```bash
 # Debug 包安装到已连接设备:
@@ -242,13 +272,13 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 # 纯 JVM 单测,跑推理管线的 Fake 路径(无需 Android / 模型):
 ./gradlew :core:test
 
-# 真机曳光弹测试(需要一台已侧载好模型的真机):
+# 真机集成冒烟测试(需要一台已侧载好模型的真机):
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
 ---
 
-## 7. 隐私
+## 8. 隐私
 
 - **运行时无网络请求。** 除首次启动**可选**下载模型外,App 不发起任何
   网络调用。模型就绪后可以一直离线使用。
@@ -267,7 +297,7 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 
 ---
 
-## 8. 开源致谢
+## 9. 开源致谢
 
 没有下面这些项目,就没有 LumiRead。完整清单(含许可证与来源链接)
 见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
@@ -284,11 +314,16 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
   —— Apache-2.0。端侧 LLM 运行时。
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)(小米 / k2-fsa)
   —— Apache-2.0。端侧 TTS 运行时。
-- [AndroidX / Jetpack Compose / CameraX](https://developer.android.com/jetpack)
-  —— Apache-2.0。UI、相机与持久化。
+- [AndroidX / Jetpack Compose / CameraX / AppCompat](https://developer.android.com/jetpack)
+  —— Apache-2.0。UI、相机、per-app locale 与持久化。
 - [Kotlin](https://kotlinlang.org/) 与
   [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines)
   (JetBrains)—— Apache-2.0。
+
+**开源字体**
+- [站酷快乐体 / ZCOOL KuaiLe](https://github.com/google/fonts/tree/main/ofl/zcoolkuaile)
+  (站酷)—— SIL Open Font License 1.1。儿童模式中通篇使用的圆润、
+  孩子友好的显示字体(单字体即覆盖拉丁 + 简体中文)。
 
 **构建中用到的闭源 SDK(诚实声明)**
 - [Google ML Kit](https://developers.google.com/ml-kit) —— Google 闭源
@@ -300,13 +335,13 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 
 ---
 
-## 9. 许可证
+## 10. 许可证
 
 本仓库中的 LumiRead 源代码采用 **Apache License 2.0** —— 详见
 [LICENSE](./LICENSE) 与 [NOTICE](./NOTICE)。
 
 运行时所用的模型、框架与 SDK 各自有**独立的许可证条款**,见
-[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) 与上文 §8。
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) 与上文 §9。
 
 > **关于 APK 的诚实声明。** Release 中的 `app-release.apk`
 > **不包含** Gemma 4 模型权重;最终用户在首次启动时,直接从模型上游
@@ -314,7 +349,7 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 
 ---
 
-## 10. 参与贡献
+## 11. 参与贡献
 
 这是一个早期黑客松版本,欢迎 Issue 与 PR。
 
@@ -326,9 +361,9 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 
 ---
 
-## 11. Roadmap
+## 12. Roadmap
 
-下面是想做、但**尚未做**的事情。v1.0.0 里都没有。
+下面是想做、但**尚未做**的事情。v1.2.0 里都没有。
 
 - **Windows 端 UWP 移植**,与 `:core` 推理管线共用。
 - **逐页书签 / 历史回溯**,孩子可以回顾自己读过的内容。

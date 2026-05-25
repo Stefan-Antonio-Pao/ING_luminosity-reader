@@ -1,44 +1,55 @@
 package com.lumiread
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.lumiread.core.AgeBand
 import com.lumiread.ui.LumiReadApp
+import com.lumiread.ui.theme.LumiMode
+import com.lumiread.ui.theme.LumiTheme
 
 /**
- * App 入口。`onCreate` 第一件事调用 [AppGraph.init],把 [Application]
+ * App 入口。 起:`onCreate` 第一件事调用 [AppGraph.init],把 [Application]
  * 注入 [com.lumiread.llm.Gemma4Engine](LiteRT-LM 需 Context 拿 `getExternalFilesDir`)。
  *
- * 不在这里触发 `warmUp()` —— Gemma 初始化可达 ~10 s,放 `onCreate` 会阻塞冷启动。
- * 首次 `generate()` 时由 Pipeline 异步触发,UI 侧已有"等待中"占位。
+ * 不在这里触发 `warmUp` —— Gemma 初始化可达 ~10 s,放 `onCreate` 会阻塞冷启动。
+ * 首次 `generate` 时由 Pipeline 异步触发,UI 侧已有"等待中"占位。
  *
- * `enableEdgeToEdge()` 必须放在 `super.onCreate` 之前(官方文档要求),
- * 让窗口绘到系统栏底下,顶部状态栏不再压住聊天头部。具体内边距由 LumiReadApp 用
- * `statusBarsPadding()` / `navigationBarsPadding()` / `imePadding()` 在 Compose 侧消化。
+ * .1:`enableEdgeToEdge` 必须放在 `super.onCreate` 之前(官方文档要求),
+ * 让窗口绘到系统栏底下,顶部状态栏不再被状态栏盖住;具体内边距由 LumiReadApp 用
+ * `statusBarsPadding` / `navigationBarsPadding` / `imePadding` 在 Compose 侧消化。
+ *
+ * v1.1:继承 [AppCompatActivity] 而非 [ComponentActivity],
+ * 让 `AppCompatDelegate.setApplicationLocales` 在 API 26-32 也能通过
+ * `AppLocalesMetadataHolderService`(见 Manifest)落地。AppCompatActivity 本身仍是
+ * ComponentActivity 子类,setContent / Compose 栈不受影响。
+ * 主题切到 `Theme.AppCompat.DayNight.NoActionBar`(在 Manifest)—— 全 Compose UI,
+ * 不用系统 ActionBar / View,所以 AppCompat 主题只起"提供窗口背景 + DayNight 配置"的作用。
+ *
+ * UI overhaul(2026-05-25):用 [LumiTheme] 取代原私有 `LumiReadTheme`。
+ * 当前是骨架版,只按 mode 选 tokens + 套 MaterialTheme,**视觉与改造前完全一致**。
+ * will引入 playfulness 动画; ChildTokens 才会落地卡通值。
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         AppGraph.init(application)
         setContent {
-            LumiReadTheme {
+            val mode by AppGraph.settings.lumiModeFlow.collectAsState(initial = LumiMode.Child)
+            val ageBand by AppGraph.settings.ageFlow.collectAsState(initial = AgeBand.PRESCHOOL)
+            LumiTheme(mode = mode, ageBand = ageBand) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     LumiReadApp()
                 }
             }
         }
     }
-}
-
-@Composable
-private fun LumiReadTheme(content: @Composable () -> Unit) {
-    // 暂用 Material3 默认配色。
-    MaterialTheme(content = content)
 }

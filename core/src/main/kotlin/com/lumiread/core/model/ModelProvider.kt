@@ -4,7 +4,7 @@ package com.lumiread.core.model
  * 决定 `.litertlm` 权重文件从哪来。
  *
  * - [Strategy.EXTERNAL_DOWNLOAD]:默认。首启检测应用私有外部目录,缺则从 [downloadUrl] 流式下载,
- *   带进度、断点续传、SHA-256 校验。
+ * 带进度、断点续传、SHA-256 校验。
  * - [Strategy.ADB_PUSHED]:评委兜底。要求文件已被 `adb push` 到应用私有外部目录。
  * - [Strategy.BUNDLED_ASSET]:警告。把 2.59 GB 塞 assets/。仅当确保演示设备空间充足时用。
  *
@@ -15,7 +15,7 @@ interface ModelProvider {
 
     val strategy: Strategy
 
-    /** SHA-256 期望值,用于校验。由托管方提供。 */
+    /** SHA-256 期望值,用于校验。来自 设计规范#A8 —— 由托管方提供。 */
     val expectedSha256: String?
 
     /** 仅在 [Strategy.EXTERNAL_DOWNLOAD] 下使用。 */

@@ -25,7 +25,7 @@ class FakeTtsEngine(
             AgeBand.PRESCHOOL     -> text.length * 70L
             AgeBand.PREADOLESCENT -> text.length * 55L
         }
-        // 拆成几段,以便 stop() 能中断
+        // 拆成几段,以便 stop 能中断
         val step = 100L
         var elapsed = 0L
         while (elapsed < durationMs && !stopped) {

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default (Simplified Chinese) UI strings for LumiRead.
+  English translations live in res/values-en/strings.xml — both files must keep
+  the same key set and the same number of placeholders per key.
+  -->
+<resources>
+    <!-- App identity -->
+    <string name="app_name" translatable="false">LumiRead</string>
+
+    <!-- Fake mode runtime banner: shown whenever any Fake* engine is wired in. -->
+    <string name="fake_mode_banner">FAKE MODE · 演示桩件 · 非真实推理</string>
+
+    <!-- Generic buttons -->
+    <string name="btn_back">← 返回</string>
+    <string name="btn_confirm">确认</string>
+    <string name="btn_ok">好的</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_send">发送</string>
+    <string name="btn_settings">⚙ 设置</string>
+    <string name="btn_my_learning">📚 我的学习</string>
+
+    <!-- Chat screen -->
+    <string name="chat_title_template">💬 LumiRead · %1$s · %2$s</string>
+    <string name="btn_new_session">↻ 新会话</string>
+    <string name="chat_input_placeholder_idle">说点什么…</string>
+    <string name="chat_input_placeholder_replying">对方正在回复…</string>
+    <string name="bubble_n_images">📷 %1$d 张图</string>
+    <string name="bubble_ocr_prefix">OCR: %1$s</string>
+    <string name="bubble_labels_prefix">标签: %1$s</string>
+    <string name="bubble_empty">(空消息)</string>
+    <string name="assistant_thinking">(LumiRead 正在思考…)</string>
+    <string name="error_images_cleared">图片已被系统清理,请重拍。</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">LumiRead · 设置</string>
+    <string name="settings_section_model">🧠 模型选择</string>
+    <string name="settings_section_ui_language">🌐 界面语言</string>
+    <string name="settings_section_output">输出</string>
+    <string name="settings_ui_lang_follow_system">跟随系统</string>
+    <string name="settings_ui_lang_zh">中文</string>
+    <string name="settings_ui_lang_en">English</string>
+    <string name="settings_output_lang_value">输出语言: %1$s</string>
+    <string name="settings_btn_toggle_lang">切换输出语言 (EN ↔ ZH)</string>
+    <string name="settings_age_value">年龄段: %1$s</string>
+    <string name="settings_btn_cycle_age">循环年龄段</string>
+    <string name="settings_ocr_mode_label">OCR 模式: %1$s</string>
+    <string name="settings_ocr_mode_label_with_warning">OCR 模式: %1$s  ※ 当前模型不支持,已自动回 OCR</string>
+    <string name="ocr_mode_ocr">独立 OCR(推荐)</string>
+    <string name="ocr_mode_multimodal">原生多模态(实验)</string>
+    <string name="settings_btn_toggle_ocr_mode">切换 OCR ↔ 多模态</string>
+    <string name="settings_e2b_no_multimodal">%1$s 不支持原生多模态。如需开启,请先安装并切换到 Gemma 4 E4B。</string>
+    <string name="settings_multimodal_warn">(实验)端侧多模态延迟显著,可能 10s+ 才出首字。</string>
+    <string name="settings_footer_note">(语言/年龄段/OCR 模式 / 模型选择 均经 DataStore 持久化。切换模型会结束当前会话并重新初始化引擎。)</string>
+    <string name="settings_import_failed">⚠ 导入失败:%1$s</string>
+
+    <!-- Model display names -->
+    <string name="model_e2b_display_name">Gemma 4 E2B(纯文本,2.59 GB)</string>
+    <string name="model_e4b_display_name">Gemma 4 E4B(支持多模态,3.66 GB)</string>
+
+    <!-- Model picker -->
+    <string name="model_switch_dialog_title">切换到 %1$s?</string>
+    <string name="model_switch_dialog_confirm">将结束当前会话并重新初始化引擎(可能需要约 10 秒)。确认切换?</string>
+    <string name="model_switch_dialog_not_installed">%1$s 尚未安装。请先在下方点「打开 HF 下载页」获取模型文件,然后用「导入已下载文件」放入。</string>
+    <string name="model_status_installed">✓ 已安装</string>
+    <string name="model_status_missing">⚠ 未安装</string>
+    <string name="import_progress_with_total">导入中:%1$d / %2$d MB</string>
+    <string name="import_progress_no_total">导入中:%1$d MB</string>
+    <string name="btn_open_hf">打开 HF</string>
+    <string name="btn_import_file">导入文件</string>
+    <string name="btn_delete">删除</string>
+
+    <!-- Capture screen -->
+    <string name="capture_status_hint">已拍 %1$d 张 · 拍完会弹出裁切确认</string>
+    <string name="capture_failed">拍照失败:%1$s</string>
+    <string name="capture_in_progress">拍摄中…</string>
+    <string name="btn_capture_another">📷 拍照(再来一张)</string>
+    <string name="btn_chat_direct">💬 直接对话</string>
+    <string name="btn_done_with_count">完成 (%1$d) →</string>
+    <string name="btn_clear">清空</string>
+    <string name="permission_camera_title">LumiRead 需要相机权限才能拍绘本</string>
+    <string name="permission_camera_body">我们不上传图片,所有识别都在本机离线完成。</string>
+    <string name="btn_grant_permission">授予权限</string>
+
+    <!-- Crop confirm screen -->
+    <string name="btn_retake">🔄 重拍</string>
+    <string name="btn_confirm_crop">✓ 确认</string>
+
+    <!-- Output mode section (v1.1 step 4) -->
+    <string name="settings_section_output_mode">🌏 输出模式</string>
+    <string name="output_mode_monolingual">单语(跟随输出语言)</string>
+    <string name="output_mode_bilingual">中英双语(成对输出)</string>
+    <string name="settings_output_mode_hint">双语模式下,Gemma 会用主语言(=输出语言)在前、另一语言在后,分行成对呈现。与界面语言、输出语言互相独立。</string>
+
+    <!-- TTS section (v1.1 step 3) -->
+    <string name="settings_section_tts">🔊 朗读</string>
+    <string name="settings_auto_play_tts">自动朗读 AI 回应</string>
+    <string name="settings_auto_play_tts_hint">关闭后,每条回应旁会出现「▶ 播放」按钮,由孩子自己决定何时听。</string>
+    <string name="btn_play">▶ 播放</string>
+    <string name="btn_play_again">🔁 再听一遍</string>
+    <string name="btn_playing">朗读中…</string>
+
+    <!-- Display mode section -->
+    <string name="settings_section_mode">🎨 显示模式</string>
+    <string name="mode_child">儿童模式(卡通)</string>
+    <string name="mode_parent">家长模式(简洁)</string>
+    <!-- Parent gate (Child → Parent mode soft block) -->
+    <string name="parent_gate_title">点击较大的数字</string>
+    <string name="parent_gate_subtitle">仅为防止小朋友误触离开,完全离线、不存密码。</string>
+    <string name="parent_gate_wrong">不对哦,试试另一个。</string>
+    <string name="parent_gate_cancel">取消</string>
+    <string name="mode_demo_hint">切换上方按钮,深蓝沉浸卡、暖金按钮、Cream 浅底、墨色文字、圆角与字号在 ~450ms 内同时平滑过渡。</string>
+    <string name="mode_demo_card">模式过渡演示</string>
+    <string name="mode_demo_pill">▶ 行动按钮</string>
+    <string name="mode_demo_gallery_title">🧩 组件预览</string>
+    <string name="mode_demo_cta">拍</string>
+    <string name="mode_demo_counter">已按 %1$d 次</string>
+    <string name="mode_demo_select_a">故事 A</string>
+    <string name="mode_demo_select_b">故事 B</string>
+    <string name="mode_demo_switch">自动朗读</string>
+    <string name="mode_demo_gallery_hint">圆形按钮按下回弹 + 触感反馈、选项卡选中高亮、圆胖开关滑动、星形吉祥物淡入 —— 仅儿童模式生效。切换上方按钮观察对比。</string>
+
+    <!-- My Learning screen -->
+    <string name="my_learning_title">📚 我的学习</string>
+    <string name="my_learning_empty">还没有学习记录 —— 开一段伴读试试吧。</string>
+    <string name="my_learning_clear">清空记录</string>
+    <string name="my_learning_summary_header">汇总</string>
+    <string name="my_learning_summary_totals">总会话: %1$d  ·  总时长: %2$s</string>
+    <string name="my_learning_summary_langs">中文: %1$d  ·  英文: %2$d</string>
+    <string name="my_learning_record_meta">%1$s · %2$s · %3$d 轮</string>
+    <string name="my_learning_no_image_session">(无图直聊)</string>
+</resources>

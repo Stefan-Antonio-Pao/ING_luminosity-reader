@@ -15,15 +15,16 @@ import java.io.File
  * 当前会话本地持久化(用户要求:重启后聊天不丢)。
  *
  * 存储:`context.filesDir/chat/current.json`,JSON 数组,每行一个 [ChatRow]。
- * 用 `org.json`(Android 内置)避免引新依赖。本类只管"最近一段对话",历史归档不在范围内。
+ * 用 `org.json`(Android 内置)避免引新依赖。会话归档是 ,本类只管"最近一段对话"。
  *
  * 一致性:写入走"先写 `.tmp`、再 `rename`"原子语义,避免应用半路被杀留下半截 JSON。
  * 并发:全程 [Mutex] 串行化,UI 多次连续触发 [save] 不会交错。
  *
  * 不持久化:
- *  - LiteRT-LM `Conversation` 的 KV cache(进程内对象,本就不能跨重启)→ 重启后用户再发一条,
- *    [com.lumiread.ui.ChatState] 会按需重开 ChatSession,LLM 没有上下文 KV 但消息文本仍在 UI。
- *  - 用户图片路径仍存,但 cacheDir 可能已被系统清掉 → UI 仅显示文件名。
+ * - LiteRT-LM `Conversation` 的 KV cache(进程内对象,本就不能跨重启)→ 重启后用户再发一条,
+ * [com.lumiread.ui.ChatState] 会按需重开 ChatSession,LLM 没有上下文 KV 但消息文本仍在 UI。
+ * 这是 才解决的"会话归档/恢复"范围,当前阶段用户已确认接受。
+ * - 用户图片路径仍存,但 cacheDir 可能已被系统清掉 → UI 显示文件名,加载真图是 工作。
  */
 class ChatStore(context: Context) {
     private val dir  = File(context.filesDir, "chat").apply { mkdirs() }

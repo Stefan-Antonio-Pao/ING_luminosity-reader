@@ -10,20 +10,21 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 曳光弹测试:在真机上跑一次 Gemma4Engine,断言"流非空 + 首词延迟 + 已知后端"。
+ * 集成冒烟测试:在真机上跑一次 Gemma4Engine,断言"流非空 + 首词延迟 + 已知后端"。
  *
  * 跑法:
- *   1. 先 push 模型:
- *        adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.lumiread/files/
- *   2. ./gradlew :app:connectedDebugAndroidTest
+ * 1. 先 push 模型(用户必做):
+ * adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.lumiread/files/
+ * 2. ./gradlew :app:connectedDebugAndroidTest
  *
  * 断言策略(LLM 输出不确定,只验**结构性**属性,不验逐字):
- *   - 流非空
- *   - 首词延迟 ≤ 6000 ms(目标基线)
- *   - `activeBackend` 已知(GPU 或 CPU)
+ * - 流非空
+ * - 首词延迟 ≤ 6000 ms(目标基线;PKJ110 不是 Pixel 8,**实测数字也写 Log**,
+ * 由人工评估是否接受)
+ * - `activeBackend` 已知(GPU 或 CPU)
  *
  * Log 输出格式:
- *   TRACER: first-token=Xms, backend=Y, out.len=Z, total=Tms
+ * SMOKE: first-token=Xms, backend=Y, out.len=Z, total=Tms
  */
 @RunWith(AndroidJUnit4::class)
 class Gemma4EngineTracerTest {
@@ -36,7 +37,7 @@ class Gemma4EngineTracerTest {
         val out = StringBuilder()
         val t0 = System.currentTimeMillis()
         var firstTokenMs: Long = -1L
-        // 在 close() 之前 snapshot 后端名,避免后续断言读到 "closed"。
+        // 在 close 之前 snapshot 后端名,避免后续断言读到 "closed"。
         var snapshotBackend = "<not-captured>"
 
         try {
@@ -66,7 +67,7 @@ class Gemma4EngineTracerTest {
         assertTrue("流应非空,实际 length=${out.length}", out.isNotEmpty())
         assertTrue("应记录到首词时间,实际=$firstTokenMs", firstTokenMs > 0)
         assertTrue(
-            "首词应 ≤ 6 s,实测 ${firstTokenMs}ms 后端=$snapshotBackend",
+            "首词应 ≤ 6 s(性能基线),实测 ${firstTokenMs}ms 后端=$snapshotBackend",
             firstTokenMs <= 6_000L,
         )
         assertTrue(

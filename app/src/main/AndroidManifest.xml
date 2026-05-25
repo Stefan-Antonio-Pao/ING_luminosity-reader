@@ -9,11 +9,28 @@
         android:required="true" />
 
     <application
-        android:label="LumiRead"
+        android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true">
+
+        <!--
+            Per-app locale support: AppCompat 1.6+ on Android 12 and below requires
+            this stub Service to hold the autoStoreLocales metadata.
+            android:enabled="false" means it is never instantiated; only the meta-data is read.
+            Reference: https://developer.android.com/guide/topics/resources/app-languages#androidx-impl
+        -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

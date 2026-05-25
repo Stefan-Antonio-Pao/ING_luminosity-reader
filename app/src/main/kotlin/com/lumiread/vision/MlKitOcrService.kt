@@ -15,11 +15,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
 /**
- * ML Kit 离线 OCR。同时跑拉丁 + 中文两个识别器(ML Kit 无"通吃"模型),
+ * ML Kit 离线 OCR。同时跑拉丁 + 中文两个识别器(无"通吃"模型,见 ),
  * 再用 language-id 判定 OCR 出来的文本主语种。
  *
  * 路由策略:**两个识别器并发跑,谁产出的文本长度更长就用谁**。
  * 理由:中文识别器在纯拉丁页面常返回断字 / 乱码 / 空串,反之亦然——长度差异通常足以路由。
+ * 极端边界(都很短、都很长且语种混排)留到 调,目前 demo 够用。
+ *
+ * 依赖坐标来源:,2026-05-23 核对。
  */
 class MlKitOcrService : OcrService {
 

@@ -13,14 +13,29 @@ same information.
 ## 1. On-device AI models
 
 ### Gemma 4 E2B (instruction-tuned, `.litertlm` build)
-- **Used for:** local large language model that produces the reading-companion replies.
+- **Used for:** local large language model that produces the reading-companion replies (default text-only mode).
 - **Copyright holder:** Google LLC.
 - **License:** Apache License, Version 2.0.
 - **Source:** https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
 - **Project page:** https://ai.google.dev/gemma
 - **Notes:** The model file (~2.59 GB) is **not** included in this repository or
-  in the released APK. End users download it on first launch under the same
-  Apache-2.0 license.
+  in the released APK. End users download it from HuggingFace under the same
+  Apache-2.0 license (the App opens the HF model page in the browser; the
+  user accepts the Gemma license there and downloads, then imports the file
+  via the App's settings page).
+
+### Gemma 4 E4B (instruction-tuned, multimodal `.litertlm` build)
+- **Used for:** optional multimodal mode (image + text) when the user enables it
+  in settings. Required to use `OcrMode.MULTIMODAL`; the smaller E2B build is
+  text-only and forces `OcrMode.OCR` regardless of the user's preference.
+- **Copyright holder:** Google LLC.
+- **License:** Apache License, Version 2.0.
+- **Source:** https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm
+- **Project page:** https://ai.google.dev/gemma
+- **Notes:** The model file (~3.66 GB) is **not** included in this repository or
+  in the released APK. Installation flow is identical to E2B above (HF
+  redirect + in-app SAF import). Either E2B or E4B alone is enough to launch
+  the App; having both installed lets the user switch between them.
 
 ### vits-melo-tts-zh_en (TTS acoustic model)
 - **Used for:** offline bilingual (Chinese + English) speech synthesis.
@@ -83,6 +98,8 @@ All of the following are licensed under the **Apache License, Version 2.0**.
   https://developer.android.com/jetpack/androidx/releases/lifecycle
 - `androidx.activity:activity-compose` —
   https://developer.android.com/jetpack/androidx/releases/activity
+- `androidx.appcompat:appcompat` —
+  https://developer.android.com/jetpack/androidx/releases/appcompat
 - `androidx.compose:compose-bom`,
   `androidx.compose.ui:ui`,
   `androidx.compose.ui:ui-graphics`,
@@ -119,7 +136,25 @@ All of the following are licensed under the **Apache License, Version 2.0**.
 
 ---
 
-## 5. Test-only dependencies
+## 5. Fonts
+
+### ZCOOL KuaiLe / 站酷快乐体 (`res/font/zcool_kuaile.ttf`)
+- **Used for:** Comic-style display font in **Kids Mode** UI for **all glyphs**
+  (Latin + Simplified Chinese). The parent-mode UI continues to use the system
+  default sans-serif. Verified 2026-05-25.
+- **Designer / Copyright holder:** ZCOOL (站酷网) / ZCOOL KuaiLe contributors.
+- **License:** SIL Open Font License, Version 1.1.
+- **Upstream source:** https://github.com/google/fonts/tree/main/ofl/zcoolkuaile
+  (file fetched from `ofl/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf` in the official
+  Google Fonts repo).
+- **Notes:** Single-weight (Heavy) display font, rounded comic style covering
+  Latin + Simplified Chinese (GB2312 range). Bundled inside the APK (~1.5 MB).
+  Used as the sole Kids-Mode display font — its built-in Latin coverage means
+  no per-glyph fallback chain is required.
+
+---
+
+## 6. Test-only dependencies
 
 ### JUnit 4 (`junit:junit:4.13.2`)
 - **License:** Eclipse Public License 1.0.

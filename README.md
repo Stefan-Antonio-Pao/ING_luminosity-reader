@@ -1,34 +1,35 @@
-<div align="right">
-
-**English** | [简体中文](./README_ZH.md)
-
-</div>
-
-# LumiRead (光语伴读)
+<p align="center">
+  <img src="art/icon.png" alt="LumiRead" width="160" height="160" />
+</p>
+<h1 align="center">LumiRead · 光语伴读</h1>
+<p align="center"><b>English</b> | <a href="./README_ZH.md">简体中文</a></p>
 
 > Offline, privacy-first picture-book reading companion for children, powered
 > by on-device **Gemma 4 E2B**. Every spoken word, every photo, every reply
 > stays on the device.
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%2026%2B-3DDC84.svg)](#system-requirements)
-[![Powered by](https://img.shields.io/badge/powered%20by-Gemma%204%20E2B-FF6F00.svg)](https://ai.google.dev/gemma)
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License" /></a>
+  <a href="#4-system-requirements"><img src="https://img.shields.io/badge/platform-Android%2026%2B-3DDC84.svg" alt="Platform" /></a>
+  <a href="https://ai.google.dev/gemma"><img src="https://img.shields.io/badge/powered%20by-Gemma%204%20E2B-FF6F00.svg" alt="Powered by Gemma 4 E2B" /></a>
+</p>
 
 ---
 
 ## Table of contents
 
 1. [Overview](#1-overview)
-2. [Features](#2-features)
-3. [How it works](#3-how-it-works)
-4. [System requirements](#4-system-requirements)
-5. [Install &amp; run (end users)](#5-install--run-end-users)
-6. [Build from source (developers)](#6-build-from-source-developers)
-7. [Privacy](#7-privacy)
-8. [Acknowledgements](#8-acknowledgements)
-9. [License](#9-license)
-10. [Contributing](#10-contributing)
-11. [Roadmap](#11-roadmap)
+2. [Built for Social Good](#2-built-for-social-good)
+3. [Features](#3-features)
+4. [How it works](#4-how-it-works)
+5. [System requirements](#5-system-requirements)
+6. [Install &amp; run (end users)](#6-install--run-end-users)
+7. [Build from source (developers)](#7-build-from-source-developers)
+8. [Privacy](#8-privacy)
+9. [Acknowledgements](#9-acknowledgements)
+10. [License](#10-license)
+11. [Contributing](#11-contributing)
+12. [Roadmap](#12-roadmap)
 
 ---
 
@@ -68,33 +69,71 @@ inference. The phone is the storyteller's assistant, not the storyteller.
 
 ---
 
-## 2. Features
+## 2. Built for Social Good
 
-What ships in v1.0.0 and is actually wired up end-to-end:
+LumiRead runs **entirely on the device**. After a one-time model download, it needs
+**no internet, no account, and no server** to work — the AI reading companion lives on
+the phone itself.
+
+- **Works where connectivity doesn't.** In remote and mountainous regions, rural schools,
+  or anywhere with weak or no mobile signal, LumiRead keeps working offline. Children's
+  learning shouldn't stop at the edge of the network.
+- **No ongoing cost.** No subscription, no per-use cloud API fees, no mobile-data bills
+  from streaming to a server. Once installed, every story is free.
+- **Private by design.** A child's book photos and spoken answers never leave the device.
+
+By moving a capable language model to the edge, LumiRead aims to make warm, Socratic
+reading companionship reachable for families and classrooms that cloud-based apps leave behind.
+
+---
+
+## 3. Features
+
+What ships in v1.2.0 and is actually wired up end-to-end:
 
 - **Snap-a-page reading companion.** Take a single photo of a spread,
   align it inside the on-screen frame, and the app produces a spoken
   "praise → explanation → invitation" reply tied to what is visible.
+- **Dual-mode UI (Kids · Parent).** A whole-app theme switch: the **Kids**
+  mode uses cartoon shapes, deep-blue + warm-gold tokens, the rounded
+  **ZCOOL KuaiLe** display font, a bouncy press feedback, and a friendly
+  mascot. The **Parent** mode collapses back to a minimal Material 3
+  surface for settings, model management, and the Learning page. A
+  lightweight **parent gate** (tap the bigger of two numbers — fully
+  offline, no password) guards the Kids → Parent transition so children
+  do not exit the cartoon shell by accident.
 - **Bilingual output (Chinese · English).** The output language is a
   setting inside the app and is **decoupled from the system locale** —
   a Chinese-system phone can read English pages aloud, and vice versa.
+- **Bilingual paired output mode.** Optional "Chinese + English, paired
+  line by line" rendering for households and classrooms that want both
+  languages on screen at the same time.
+- **App-language toggle independent of the system.** A per-app locale
+  switcher (Follow system / 中文 / English) bridged through
+  `LocaleManagerCompat`, so the UI language can be flipped without
+  touching the system setting.
 - **Three age bands.** *Toddler*, *Preschool*, *Preadolescent*. Each
-  band changes vocabulary, sentence length, and the TTS speed.
+  band changes vocabulary, sentence length, the TTS speed, and — in
+  Kids mode — the touch-target sizes and bounce amplitude.
 - **Multi-turn conversation.** Keep talking about the same page, or
   switch to a fresh one — the model carries a short rolling history.
 - **Conversation without a photo.** The companion can also start a
   free-form story when no book is at hand.
+- **Auto-play / manual-play TTS toggle.** Auto-play streams each reply
+  sentence-by-sentence; with auto-play off, every reply gets a "▶ Play"
+  button so the child decides when to listen.
 - **My Learning page.** A local-only record of session count, total
   minutes, languages used, and a recent-sessions list. Nothing leaves
   the device.
 - **OCR-mode setting.** Default is the two-stage pipeline
   (ML Kit on-device OCR + image labeling, then text-only Gemma 4) for
   the fastest first-word latency. An experimental *native multimodal*
-  mode is available behind a clearly-labeled toggle.
+  mode is available behind a clearly-labeled toggle on the Gemma 4 E4B
+  multimodal model.
 
 ---
 
-## 3. How it works
+## 4. How it works
 
 ```
  ┌──────────┐     ┌────────────────────┐     ┌────────────────────┐
@@ -138,7 +177,7 @@ any of the heavy native libraries loaded.
 
 ---
 
-## 4. System requirements
+## 5. System requirements
 
 | Item | Minimum | Recommended |
 |---|---|---|
@@ -154,17 +193,20 @@ any of the heavy native libraries loaded.
 
 ---
 
-## 5. Install &amp; run (end users)
+## 6. Install &amp; run (end users)
 
-### 5.1 Install the APK
+### 6.1 Install the APK
 
 1. Download `app-release.apk` from the project's [GitHub Releases page](https://github.com/LagrangeNSS/LumiRead/releases).
 2. Verify the SHA-256 against the value printed in the Release notes.
 3. Install on your phone (Settings → Install unknown apps may need a
-   one-time permission). The APK is **roughly tens of MB**; it does
-   **not** contain the Gemma 4 model.
+   one-time permission). The APK is **about 290 MB** — most of it is
+   the LiteRT-LM, sherpa-onnx, ML Kit, and ONNX-Runtime **native
+   libraries** bundled for all four ABIs (`armeabi-v7a`, `arm64-v8a`,
+   `x86`, `x86_64`). The APK **does not** contain the Gemma 4 model
+   weights or the MeloTTS acoustic model.
 
-### 5.2 First launch — download the model
+### 6.2 First launch — download the model
 
 On first launch the app guides you through downloading the **Gemma 4 E2B**
 weights and the **MeloTTS** acoustic model.
@@ -176,7 +218,7 @@ weights and the **MeloTTS** acoustic model.
 - After the download, no further network access is needed. You can put
   the phone in airplane mode and keep using the app.
 
-### 5.3 Side-loading the model (reviewers, evaluators, slow networks)
+### 6.3 Side-loading the model (reviewers, evaluators, slow networks)
 
 If you prefer not to download in-app, you can push the files via `adb`:
 
@@ -192,9 +234,9 @@ The app detects the files on startup and skips the download step.
 
 ---
 
-## 6. Build from source (developers)
+## 7. Build from source (developers)
 
-### 6.1 Toolchain
+### 7.1 Toolchain
 
 | Tool | Version |
 |---|---|
@@ -204,7 +246,7 @@ The app detects the files on startup and skips the download step.
 | Android SDK | platform 36, build-tools 36.x |
 | Gradle | wrapper-managed (`./gradlew`) |
 
-### 6.2 Clone &amp; configure
+### 7.2 Clone &amp; configure
 
 ```bash
 git clone https://github.com/LagrangeNSS/LumiRead.git
@@ -214,7 +256,7 @@ cd LumiRead
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 ```
 
-### 6.3 Get the sherpa-onnx AAR
+### 7.3 Get the sherpa-onnx AAR
 
 `sherpa-onnx` is not published to Maven Central; the project loads it
 from a local `libs/` directory.
@@ -224,7 +266,7 @@ from a local `libs/` directory.
 3. Place it at `libs/sherpa-onnx-1.13.2.aar` (create the `libs/` folder
    in the repository root if it does not exist).
 
-### 6.4 Get the models
+### 7.4 Get the models
 
 These files are **not** in the repository, and they are **not** in the
 release APK either — they live entirely on the end user's device.
@@ -246,9 +288,9 @@ release APK either — they live entirely on the end user's device.
   `vits-melo-tts-zh_en` archive). Extract under `./models/`.
 
 For end-user testing without an in-app download, `adb push` the files to
-`/sdcard/Android/data/com.lumiread/files/` as shown in §5.3.
+`/sdcard/Android/data/com.lumiread/files/` as shown in §6.3.
 
-### 6.5 Build &amp; run
+### 7.5 Build &amp; run
 
 ```bash
 # Debug build, install on a connected device:
@@ -260,14 +302,14 @@ For end-user testing without an in-app download, `adb push` the files to
 # Pure-JVM tests for the reasoning pipeline (no Android, no model needed):
 ./gradlew :core:test
 
-# Tracer-bullet tests against the real LiteRT-LM and sherpa-onnx
-# (requires a physical device with the models already in place):
+# On-device integration smoke tests against the real LiteRT-LM and
+# sherpa-onnx (requires a physical device with the models already in place):
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
 ---
 
-## 7. Privacy
+## 8. Privacy
 
 - **No network requests at runtime.** The app contacts a network only
   during the optional first-launch model download. Once the model is on
@@ -288,7 +330,7 @@ on-device** (`bundled` variants, no Google Play Services call-out).
 
 ---
 
-## 8. Acknowledgements
+## 9. Acknowledgements
 
 LumiRead would not exist without the work of these projects. Please see
 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the complete list
@@ -307,11 +349,17 @@ including license texts and source links.
   Apache-2.0. The on-device LLM runtime.
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) by Xiaomi /
   k2-fsa — Apache-2.0. The on-device TTS runtime.
-- [AndroidX / Jetpack Compose / CameraX](https://developer.android.com/jetpack) —
-  Apache-2.0. UI, camera, and persistence.
+- [AndroidX / Jetpack Compose / CameraX / AppCompat](https://developer.android.com/jetpack) —
+  Apache-2.0. UI, camera, per-app locale, and persistence.
 - [Kotlin](https://kotlinlang.org/) and
   [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) by
   JetBrains — Apache-2.0.
+
+**Open-source typography**
+- [ZCOOL KuaiLe / 站酷快乐体](https://github.com/google/fonts/tree/main/ofl/zcoolkuaile)
+  by ZCOOL — SIL Open Font License 1.1. The rounded, child-friendly
+  display font used throughout Kids mode (covers Latin + Simplified
+  Chinese in a single file).
 
 **Proprietary SDK used in the build (full disclosure)**
 - [Google ML Kit](https://developers.google.com/ml-kit) — proprietary
@@ -325,7 +373,7 @@ real consumer phones inside the half-month window of this hackathon.
 
 ---
 
-## 9. License
+## 10. License
 
 The LumiRead source code in this repository is licensed under
 **Apache License 2.0** — see [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
@@ -341,7 +389,7 @@ The models, frameworks, and SDKs used at runtime are licensed
 
 ---
 
-## 10. Contributing
+## 11. Contributing
 
 This is an early hackathon release. Issues and pull requests are welcome.
 
@@ -353,10 +401,10 @@ Before submitting:
 
 ---
 
-## 11. Roadmap
+## 12. Roadmap
 
 Things we would like to build next, but **have not built yet**. None of
-the items below are present in v1.0.0.
+the items below are present in v1.2.0.
 
 - **Windows port** via UWP, sharing the `:core` pipeline.
 - **Per-page bookmark / dialog history** the child can revisit later.

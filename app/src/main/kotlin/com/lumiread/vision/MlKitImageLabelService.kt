@@ -11,7 +11,7 @@ import com.lumiread.core.vision.ImageLabelService
  * ML Kit 离线图像打标 —— 默认模型 400+ 标签。
  *
  * 置信度阈值取 0.5(略高于默认 0.5,保留宽泛但去掉噪声)。
- * 低风格化插画可能拿到"purple/round"而非具体物体 —— 后续可加自定义 TFLite 兜底。
+ * 低风格化插画可能拿到"purple/round"而非具体物体——后续 可加自定义 TFLite 兜底。
  */
 class MlKitImageLabelService : ImageLabelService {
 

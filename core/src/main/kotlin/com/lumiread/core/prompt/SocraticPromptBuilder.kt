@@ -4,21 +4,28 @@ import com.lumiread.core.AgeBand
 import com.lumiread.core.Label
 import com.lumiread.core.Lang
 import com.lumiread.core.OcrResult
+import com.lumiread.core.OutputMode
 
 /**
  * 把 (语言, 年龄段, OCR 文本, 图像标签) 拼成一段系统提示 + 用户提示。
  *
- * **博学故事伙伴 · 三段式回应结构**:
- *  1. **夸赞**:先肯定孩子的提问/观察(温暖入口)
- *  2. **详细解释**:用孩子能听懂的话直接回答或讲知识点,可举例、比喻、续故事
- *  3. **拓展提问**:抛一个开放式问题引导继续观察/想象/思考
+ * ** 2026-05-24 二次修订**:在"博学故事伙伴"基础上锁定三段式回应结构。
+ *
+ * 一次修订(2026-05-24 早):从"纯苏格拉底导师"放松为"每轮 1~2 件事自由组合",但模型偏向
+ * 选"提问"动作,孩子反复被问、体验疲劳。
+ *
+ * 二次修订(2026-05-24 晚):用户要求每轮固定三段式 ——
+ * 1. **夸赞**:先肯定孩子的提问/观察(温暖入口)
+ * 2. **详细解释**:用孩子能听懂的话直接回答或讲知识点,可举例、比喻、续故事
+ * 3. **拓展提问**:抛一个开放式问题引导继续观察/想象/思考
  *
  * 之所以是结构化而非自由组合:模型在"自由"模式下默认偏问句,孩子被反问太多;固定 1→2→3
  * 顺序保证每轮都给"知识/解释"的实质内容,问题只是收尾的拓展邀请。
  *
- * 长度按年龄段控,主要是 TTS 体验门槛(实测 ZH 60 字 ~10 s)。
+ * 长度按年龄段控,主要是 TTS 体验门槛( 实测 ZH 60 字 ~10 s)。三段式比一次修订更
+ * 密一些,所以上限略放宽;但仍要紧凑,避免长篇大论。
  *
- * 所有模板集中本文件 —— **不要散落到 UI 层**。
+ * 所有模板集中本文件, 调优入口 —— **不要散落到 UI 层**。
  * 类名 [SocraticPromptBuilder] 保留以避免改动所有调用点。
  */
 object SocraticPromptBuilder {
@@ -27,23 +34,26 @@ object SocraticPromptBuilder {
      * 单轮(无对话历史)的完整 prompt:系统人格 + 当前页素材 + 任务行。
      * 用于 [com.lumiread.core.pipeline.Pipeline.run] 一次性场景。
      * 多轮请改用 [systemPrompt] + [firstTurnContent] / [followUpContent]。
+     *
+     * [outputMode] 默认 [OutputMode.MONOLINGUAL],保持与 v1.0 调用点的二进制兼容。
      */
     fun build(
         ocr: OcrResult,
         labels: List<Label>,
         outputLang: Lang,
         ageBand: AgeBand,
+        outputMode: OutputMode = OutputMode.MONOLINGUAL,
     ): String {
         val text = ocr.joinedText().ifBlank { blankTextNote(outputLang) }
         val labelStr = formatLabels(labels)
         return buildString {
-            appendLine(systemPersona(outputLang, ageBand))
+            appendLine(systemPersona(outputLang, ageBand, outputMode))
             appendLine()
             appendLine(scaffold(outputLang))
             appendLine("- text: $text")
             appendLine("- labels: $labelStr")
             appendLine()
-            appendLine(taskLine(outputLang, ageBand))
+            appendLine(taskLine(outputLang, ageBand, outputMode))
         }
     }
 
@@ -51,8 +61,11 @@ object SocraticPromptBuilder {
      * 多轮聊天:只含系统人格 + 原则。投递给 LiteRT-LM `ConversationConfig.systemInstruction`,
      * 只在会话开始注入一次。后续用户轮请用 [firstTurnContent] / [followUpContent]。
      */
-    fun systemPrompt(outputLang: Lang, ageBand: AgeBand): String =
-        systemPersona(outputLang, ageBand)
+    fun systemPrompt(
+        outputLang: Lang,
+        ageBand: AgeBand,
+        outputMode: OutputMode = OutputMode.MONOLINGUAL,
+    ): String = systemPersona(outputLang, ageBand, outputMode)
 
     /** 多轮第一轮:把当前页素材 + 任务行作为首条用户消息发出。 */
     fun firstTurnContent(
@@ -60,6 +73,7 @@ object SocraticPromptBuilder {
         labels: List<Label>,
         outputLang: Lang,
         ageBand: AgeBand,
+        outputMode: OutputMode = OutputMode.MONOLINGUAL,
     ): String {
         val text = ocr.joinedText().ifBlank { blankTextNote(outputLang) }
         val labelStr = formatLabels(labels)
@@ -68,7 +82,7 @@ object SocraticPromptBuilder {
             appendLine("- text: $text")
             appendLine("- labels: $labelStr")
             appendLine()
-            appendLine(taskLine(outputLang, ageBand))
+            appendLine(taskLine(outputLang, ageBand, outputMode))
         }
     }
 
@@ -82,6 +96,7 @@ object SocraticPromptBuilder {
         userText: String,
         outputLang: Lang,
         ageBand: AgeBand,
+        outputMode: OutputMode = OutputMode.MONOLINGUAL,
     ): String = buildString {
         if (ocr != null) {
             appendLine(newPagePreface(outputLang))
@@ -95,7 +110,7 @@ object SocraticPromptBuilder {
             appendLine(cleanedUserText)
             appendLine()
         }
-        appendLine(taskLine(outputLang, ageBand))
+        appendLine(taskLine(outputLang, ageBand, outputMode))
     }
 
     private fun formatLabels(labels: List<Label>): String = labels.take(5)
@@ -117,7 +132,7 @@ object SocraticPromptBuilder {
         Lang.EN -> "(no readable text)"
     }
 
-    private fun systemPersona(lang: Lang, age: AgeBand): String = when (lang) {
+    private fun systemPersona(lang: Lang, age: AgeBand, mode: OutputMode): String = when (lang) {
         Lang.ZH -> """
             你是 LumiRead,一位温暖、博学、爱讲故事的儿童伴读伙伴。
             你正在陪一个 ${ageHintZh(age)} 的孩子。
@@ -128,9 +143,9 @@ object SocraticPromptBuilder {
             3. **拓展提问**:最后抛一个开放式问题,邀请他继续观察、想象或联系自身经历。问题要紧扣前面解释的话题,而不是凭空换话题。
 
             原则:
-            1. 语言:简体中文。回答不要混入英文。
+            1. ${languageRuleZh(mode)}
             2. 风格:${styleZh(age)}
-            3. 长度:${lengthHintZh(age)};三段要紧凑衔接,但"详细解释"必须有营养,不能一笔带过。
+            3. 长度:${lengthHintZh(age)};三段要紧凑衔接,但"详细解释"必须有营养,不能一笔带过。${bilingualLengthNoteZh(mode)}
             4. 没有绘本时,在"详细解释"部分可以编一个温暖、积极的小故事片段;"拓展提问"邀请孩子接龙。
             5. 永远温暖、好奇、鼓励;不评判孩子的回答对错。
         """.trimIndent()
@@ -145,12 +160,57 @@ object SocraticPromptBuilder {
             3. **Follow-up question**: end with one open-ended question inviting continued observation, imagination, or connection to their life. The question must stay on the topic of the explanation, not jump to a new topic.
 
             Principles:
-            1. Language: English only. Do not mix in Chinese.
+            1. ${languageRuleEn(mode)}
             2. Style: ${styleEn(age)}
-            3. Length: ${lengthHintEn(age)}; keep the three parts tight, but the "explanation" must be substantive, not a throwaway line.
+            3. Length: ${lengthHintEn(age)}; keep the three parts tight, but the "explanation" must be substantive, not a throwaway line.${bilingualLengthNoteEn(mode)}
             4. When there is no picture book, the "explanation" part can be a warm, positive story fragment; the "follow-up question" then invites the child to continue with you.
             5. Always warm, curious, encouraging; never judge the child's answer as wrong.
         """.trimIndent()
+    }
+
+    /**
+     * v1.1:语言规则。单语保持 v1.0 行为;双语下要求"中英成对、分行清晰、主语言在前"。
+     *
+     * 设计要求"同一句先中文后英文成对输出";UI 上希望主语种由 [Lang] 决定(更对称、
+     * 教学价值更高),所以这里 [Lang.ZH] 时主语种=中文,[Lang.EN] 时主语种=英文。两者都"主在前、副在后"。
+     */
+    private fun languageRuleZh(mode: OutputMode): String = when (mode) {
+        OutputMode.MONOLINGUAL -> "语言:简体中文。回答不要混入英文。"
+        OutputMode.BILINGUAL   -> """
+            语言:中英双语成对输出。每讲完一句中文,**紧接着**用一个**独立的新行**给出对应的英文翻译,**不要把中英写在同一行**;然后空一行再继续下一句。三段(夸赞 / 详细解释 / 拓展提问)各自都要按此中英成对呈现。例如:
+            这个问题真棒!
+            What a great question!
+
+            小狗在公园里跑步,因为公园有好多它喜欢的草地味道。
+            The puppy is running in the park, because the park has many grassy smells it loves.
+
+            你猜小狗最喜欢公园的哪个角落?
+            Can you guess which corner of the park the puppy likes best?
+        """.trimIndent()
+    }
+    private fun languageRuleEn(mode: OutputMode): String = when (mode) {
+        OutputMode.MONOLINGUAL -> "Language: English only. Do not mix in Chinese."
+        OutputMode.BILINGUAL   -> """
+            Language: bilingual English + Chinese, paired. After each English sentence, **immediately** give the matching Chinese translation on a **separate new line** — never put both on the same line. Then leave one blank line before the next sentence. All three parts (praise / explanation / follow-up question) must follow this paired format. Example:
+            What a great question!
+            这个问题真棒!
+
+            The puppy is running in the park, because the park has many grassy smells it loves.
+            小狗在公园里跑步,因为公园有好多它喜欢的草地味道。
+
+            Can you guess which corner of the park the puppy likes best?
+            你猜小狗最喜欢公园的哪个角落?
+        """.trimIndent()
+    }
+
+    /** 双语模式下,长度上限按"每种语言独立"应用,避免两侧都被腰斩。 */
+    private fun bilingualLengthNoteZh(mode: OutputMode): String = when (mode) {
+        OutputMode.MONOLINGUAL -> ""
+        OutputMode.BILINGUAL   -> " 双语模式下,长度上限**只约束中文侧**,英文翻译按需要自然写,不必硬压字数。"
+    }
+    private fun bilingualLengthNoteEn(mode: OutputMode): String = when (mode) {
+        OutputMode.MONOLINGUAL -> ""
+        OutputMode.BILINGUAL   -> " In bilingual mode, the length limit **applies only to the English side**; let the Chinese translation flow naturally without trying to match the cap."
     }
 
     private fun scaffold(lang: Lang): String = when (lang) {
@@ -159,12 +219,24 @@ object SocraticPromptBuilder {
     }
 
     /**
-     * 任务行 —— 固定三段式『夸赞 → 详细解释 → 拓展提问』。
+     * 任务行 —— 二次修订:固定三段式『夸赞 → 详细解释 → 拓展提问』,不再让模型自由组合。
      * 多轮场景下首轮和后续轮共用同一句话:模型每轮都该看到结构提醒。
+     *
+     * v1.1:双语模式追加"中英成对、分行清晰、主语言在前"提醒,作为系统提示的二次强调
+     * (单次注入容易被对话历史稀释,任务行每轮注入更稳)。
      */
-    private fun taskLine(lang: Lang, age: AgeBand): String = when (lang) {
-        Lang.ZH -> "现在用温暖的语气回应孩子,严格按『夸赞 → 详细解释 → 拓展提问』三段顺序,自然衔接、不要写标题。${lengthHintZh(age)}。"
-        Lang.EN -> "Now respond warmly to the child, strictly following the three-part order: praise → detailed explanation → follow-up question. Flow naturally; do not write section headers. ${lengthHintEn(age)}."
+    private fun taskLine(lang: Lang, age: AgeBand, mode: OutputMode): String = when (lang) {
+        Lang.ZH -> "现在用温暖的语气回应孩子,严格按『夸赞 → 详细解释 → 拓展提问』三段顺序,自然衔接、不要写标题。${lengthHintZh(age)}。${taskLineBilingualHintZh(mode)}"
+        Lang.EN -> "Now respond warmly to the child, strictly following the three-part order: praise → detailed explanation → follow-up question. Flow naturally; do not write section headers. ${lengthHintEn(age)}.${taskLineBilingualHintEn(mode)}"
+    }
+
+    private fun taskLineBilingualHintZh(mode: OutputMode): String = when (mode) {
+        OutputMode.MONOLINGUAL -> ""
+        OutputMode.BILINGUAL   -> " 双语模式:每说一句中文,紧接着另起一行写对应英文翻译,三段都按此中英成对呈现。"
+    }
+    private fun taskLineBilingualHintEn(mode: OutputMode): String = when (mode) {
+        OutputMode.MONOLINGUAL -> ""
+        OutputMode.BILINGUAL   -> " Bilingual mode: after each English sentence, put its Chinese translation on a new line; all three parts must be presented as English+Chinese pairs."
     }
 
     private fun ageHintZh(age: AgeBand) = when (age) {
@@ -191,6 +263,7 @@ object SocraticPromptBuilder {
 
     /**
      * 长度上限。TTS 朗读时长大约 = 字数 * 0.18 s(ZH)/词数 * 0.4 s(EN)。
+     * 三段式比之前自由组合的版本需要更多字数,这里相应放宽。
      */
     private fun lengthHintZh(age: AgeBand) = when (age) {
         AgeBand.TODDLER       -> "2~3 短句、总共不超过 35 字"

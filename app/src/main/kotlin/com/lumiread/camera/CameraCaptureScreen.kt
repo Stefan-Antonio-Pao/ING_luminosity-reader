@@ -10,6 +10,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,9 +19,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,11 +34,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.lumiread.R
+import com.lumiread.ui.components.AppBackground
+import com.lumiread.ui.components.LumiOutlinedButton
+import com.lumiread.ui.components.LumiPrimaryButton
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
@@ -51,7 +61,7 @@ import kotlin.coroutines.resumeWithException
  * - **拍后手动裁切**:每张拍完进入 [CropConfirmScreen],用户拖矩形选区确认才入批。
  * - **多张支持**:一批裁好的路径累计在 `capturedPaths`,点"完成 (N)"一次性交给 Pipeline。
  * - 拍完写到 `context.cacheDir`,裁切后再写一份 `crop-*.jpg`,原图删除。
- * - 权限走 `ActivityResultContracts.RequestPermission()`。
+ * - 权限走 `ActivityResultContracts.RequestPermission`。
  */
 @Composable
 fun CameraCaptureScreen(
@@ -127,107 +137,130 @@ fun CameraCaptureScreen(
         return
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    PreviewView(ctx).also { it.controller = controller }
-                },
-            )
-        }
-
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                "已拍 ${capturedPaths.size} 张 · 拍完会弹出裁切确认",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            lastError?.let {
-                Text("拍照失败:$it", color = MaterialTheme.colorScheme.error)
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    enabled = !capturing,
-                    onClick = {
-                        capturing = true
-                        lastError = null
-                        scope.launch {
-                            runCatching { takePictureToCache(context, controller) }
-                                .onSuccess { rawPath ->
-                                    capturing = false
-                                    pendingCropPath = rawPath
-                                }
-                                .onFailure { err ->
-                                    capturing = false
-                                    lastError = err.message ?: err.javaClass.simpleName
-                                }
-                        }
+    AppBackground {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        PreviewView(ctx).also { it.controller = controller }
                     },
-                ) { Text(if (capturing) "拍摄中…" else "📷 拍照(再来一张)") }
-
-                // 仅在"还没拍过、又允许直接开聊"时显示 —— 一旦拍出第一张,就锁定走拍照流。
-                if (onStartChatDirect != null && capturedPaths.isEmpty()) {
-                    OutlinedButton(
-                        enabled = !capturing,
-                        onClick = onStartChatDirect,
-                    ) { Text("💬 直接对话") }
+                )
+                // 左上返回:半透明圆形浮层,适合任意相机画面;走 onCancel ——
+                // 有进行中会话回 CHAT,否则在 LumiReadApp 里 fall back 到 Activity.finish
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable(onClick = onCancel),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("←", color = Color.White, fontSize = 24.sp)
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    enabled = capturedPaths.isNotEmpty() && !capturing,
-                    onClick = {
-                        val snapshot = capturedPaths.toList()
-                        capturedPaths.clear()
-                        onCaptured(snapshot)
-                    },
-                ) { Text("完成 (${capturedPaths.size}) →") }
+                Text(
+                    stringResource(R.string.capture_status_hint, capturedPaths.size),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                lastError?.let {
+                    Text(stringResource(R.string.capture_failed, it), color = MaterialTheme.colorScheme.error)
+                }
 
-                OutlinedButton(
-                    modifier = Modifier.weight(1f),
-                    enabled = capturedPaths.isNotEmpty() && !capturing,
-                    onClick = {
-                        // 顺手删本批的缓存文件,避免无限堆积
-                        capturedPaths.forEach { runCatching { File(it).delete() } }
-                        capturedPaths.clear()
-                    },
-                ) { Text("清空") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    LumiPrimaryButton(
+                        modifier = Modifier.weight(1f),
+                        enabled = !capturing,
+                        label = stringResource(if (capturing) R.string.capture_in_progress else R.string.btn_capture_another),
+                        onClick = {
+                            capturing = true
+                            lastError = null
+                            scope.launch {
+                                runCatching { takePictureToCache(context, controller) }
+                                    .onSuccess { rawPath ->
+                                        capturing = false
+                                        pendingCropPath = rawPath
+                                    }
+                                    .onFailure { err ->
+                                        capturing = false
+                                        lastError = err.message ?: err.javaClass.simpleName
+                                    }
+                            }
+                        },
+                    )
+
+                    // 仅在"还没拍过、又允许直接开聊"时显示 —— 一旦拍出第一张,就锁定走拍照流。
+                    if (onStartChatDirect != null && capturedPaths.isEmpty()) {
+                        LumiOutlinedButton(
+                            enabled = !capturing,
+                            onClick = onStartChatDirect,
+                            label = stringResource(R.string.btn_chat_direct),
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    LumiPrimaryButton(
+                        modifier = Modifier.weight(1f),
+                        enabled = capturedPaths.isNotEmpty() && !capturing,
+                        label = stringResource(R.string.btn_done_with_count, capturedPaths.size),
+                        onClick = {
+                            val snapshot = capturedPaths.toList()
+                            capturedPaths.clear()
+                            onCaptured(snapshot)
+                        },
+                    )
+
+                    LumiOutlinedButton(
+                        modifier = Modifier.weight(1f),
+                        enabled = capturedPaths.isNotEmpty() && !capturing,
+                        label = stringResource(R.string.btn_clear),
+                        onClick = {
+                            // 顺手删本批的缓存文件,避免无限堆积
+                            capturedPaths.forEach { runCatching { File(it).delete() } }
+                            capturedPaths.clear()
+                        },
+                    )
+                }
+
+                LumiOutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onOpenSettings,
+                    label = stringResource(R.string.btn_settings),
+                )
             }
-
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onOpenSettings,
-            ) { Text("Settings") }
         }
     }
 }
 
 @Composable
 private fun PermissionRationale(onRetry: () -> Unit, onCancel: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text("LumiRead 需要相机权限才能拍绘本", style = MaterialTheme.typography.titleMedium)
-        Text("我们不上传图片,所有识别都在本机离线完成。")
-        Button(onClick = onRetry) { Text("授予权限") }
-        OutlinedButton(onClick = onCancel) { Text("返回") }
+    AppBackground {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(stringResource(R.string.permission_camera_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.permission_camera_body))
+            LumiPrimaryButton(onClick = onRetry, label = stringResource(R.string.btn_grant_permission))
+            LumiOutlinedButton(onClick = onCancel, label = stringResource(R.string.btn_back))
+        }
     }
 }
 

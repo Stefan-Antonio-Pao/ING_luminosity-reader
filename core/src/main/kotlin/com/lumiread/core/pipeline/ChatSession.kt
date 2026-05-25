@@ -6,6 +6,7 @@ import com.lumiread.core.Label
 import com.lumiread.core.Lang
 import com.lumiread.core.OcrMode
 import com.lumiread.core.OcrResult
+import com.lumiread.core.OutputMode
 import com.lumiread.core.llm.LlmEngine
 import com.lumiread.core.prompt.SocraticPromptBuilder
 import com.lumiread.core.tts.TtsEngine
@@ -18,7 +19,7 @@ import kotlinx.coroutines.flow.channelFlow
 /**
  * 多轮聊天会话编排。
  *
- * **每轮一条全新 Conversation + Prompt 内嵌历史**。
+ * 重构(2026-05-24):**每轮一条全新 Conversation + Prompt 内嵌历史**。
  *
  * 背景:LiteRT-LM 0.12 原生层一个 `Engine` 只允许一个活跃 session,复用同一个 `Conversation`
  * 连续 `sendMessageAsync` 第二次会抛 `only one session is supported at a time`(AAR 反编译
@@ -26,16 +27,16 @@ import kotlinx.coroutines.flow.channelFlow
  * 形态,实际 native session 句柄并未在第一轮收完后立刻释放。
  *
  * 修复:`ChatSession` 不再持有长期 Conversation,改成:
- *  - 持有 [llm] + [systemPrompt] + [history]
- *  - 每轮 [firstTurn]/[userTurn] **开新** Conversation → 把 history 拼进用户消息文本 → 收完即 close
- *  - close 在 finally 内,保证 cancellation/异常也释放 native session
+ * - 持有 [llm] + [systemPrompt] + [history]
+ * - 每轮 [firstTurn]/[userTurn] **开新** Conversation → 把 history 拼进用户消息文本 → 收完即 close
+ * - close 在 finally 内,保证 cancellation/异常也释放 native session
  *
  * 代价:LiteRT-LM 内部 KV cache 不能跨轮复用 → 每轮要全量重新算前缀的 attention。对 5–10 轮
  * 短对话(每轮 ≤ 200 token)在 2048 token 上下文里完全够用;`MAX_HISTORY=8` 超出时滚动丢最旧两轮。
  *
  * OCR/MULTIMODAL 分支由 [ocrMode] 决定:
- *  - [OcrMode.OCR]:跑 ML Kit,把 OCR 文本 + 标签拼进 prompt
- *  - [OcrMode.MULTIMODAL]:跳过 ML Kit,把图直接喂给 LlmEngine 的多模态重载
+ * - [OcrMode.OCR]:跑 ML Kit,把 OCR 文本 + 标签拼进 prompt
+ * - [OcrMode.MULTIMODAL]:跳过 ML Kit,把图直接喂给 LlmEngine 的多模态重载
  *
  * 串行约束:同一 ChatSession 上**不允许并发**调 [firstTurn] / [userTurn](LiteRT-LM 单 Engine
  * 同一时刻仍只能跑一条 session)。上层 UI 通过 mutex + 禁用发送按钮自然串行。
@@ -51,6 +52,24 @@ class ChatSession internal constructor(
     private val lang: Lang,
     private val ageBand: AgeBand,
     private val ocrMode: OcrMode,
+    /**
+     * v1.1(2026-05-25):是否在每轮 LLM 结束后自动朗读。
+     * - true:沿用 起的行为,[streamAssistant] 等 TTS 播完再发 [ChatEvent.AssistantDone]
+     * - false:跳过 TTS,LLM 一收完立即发 AssistantDone;UI 侧由"手动播放按钮"调 [TtsEngine.speak]
+     *
+     * 这是会话级配置(由 [Pipeline.startChat] 在创建时定);用户中途改设置只影响下一次新会话。
+     * 与三个语言概念(界面/输出/输出模式)完全正交。
+     */
+    private val autoPlayTts: Boolean,
+    /**
+     * v1.1(2026-05-25):输出模式(单语 / 中英双语)。会话级冻结。
+     * - [OutputMode.MONOLINGUAL]:Gemma 仅用 [lang] 输出
+     * - [OutputMode.BILINGUAL]:Gemma 主语种=[lang],副语种=另一个,分行成对呈现
+     *
+     * 影响 [SocraticPromptBuilder.systemPrompt] / [firstTurnContent] / [followUpContent]
+     * 的 prompt 生成。TTS 不需要分支:vits-melo-tts-zh_en 原生支持中英混读,直接喂整段即可。
+     */
+    private val outputMode: OutputMode,
 ) : AutoCloseable {
 
     private data class HistoryEntry(val user: String, val assistant: String)
@@ -59,8 +78,8 @@ class ChatSession internal constructor(
 
     /**
      * 首轮:用户刚拍了首批图片。
-     *  - OCR 模式:跑 ML Kit → emit TurnContext → 文本 prompt
-     *  - MULTIMODAL 模式:emit TurnContext(空) → 图直接喂 LlmEngine
+     * - OCR 模式:跑 ML Kit → emit TurnContext → 文本 prompt
+     * - MULTIMODAL 模式:emit TurnContext(空) → 图直接喂 LlmEngine
      *
      * @throws IllegalArgumentException 如果 images 为空
      */
@@ -77,6 +96,7 @@ class ChatSession internal constructor(
                         labels = mergedLabels,
                         outputLang = lang,
                         ageBand = ageBand,
+                        outputMode = outputMode,
                     )
                     streamAssistant(userText = userText, images = emptyList())
                 }
@@ -88,6 +108,7 @@ class ChatSession internal constructor(
                         labels = emptyList(),
                         outputLang = lang,
                         ageBand = ageBand,
+                        outputMode = outputMode,
                     )
                     streamAssistant(userText = userText, images = images)
                 }
@@ -122,6 +143,7 @@ class ChatSession internal constructor(
                         userText = text,
                         outputLang = lang,
                         ageBand = ageBand,
+                        outputMode = outputMode,
                     )
                     streamAssistant(userText = userText, images = emptyList())
                 }
@@ -135,6 +157,7 @@ class ChatSession internal constructor(
                         userText = text,
                         outputLang = lang,
                         ageBand = ageBand,
+                        outputMode = outputMode,
                     )
                     streamAssistant(userText = userText, images = images)
                 }
@@ -166,9 +189,11 @@ class ChatSession internal constructor(
         val prompt = buildPromptWithHistory(userText)
         val buf = StringBuilder()
 
-        // 用 .use 让 conv 在 TTS 之前就 close,**立刻**释放 native session 句柄。
-        // 否则 TTS 播放期间(10–30 s)native session 一直挂着,下一轮 createConversation
-        // 可能撞上未完成清理的句柄。
+        // 关键(2026-05-24 多轮崩溃修复):用 .use 让 conv 在 TTS 之前就 close,**立刻**释放
+        // native session 句柄。旧实现把 tts.speak 放进 try 块、conv.close 放进 finally,
+        // 导致 TTS 播放期间(10–30 s)native session 一直挂着,下一轮 createConversation 可能
+        // 撞上未完成清理的句柄 —— PKJ110 tombstones #11/#12/#13 全部 SIGSEGV in
+        // liblitertlm_jni.so,共享 frame 0x6634c4,与"快速 create/destroy Conversation"的猜想吻合。
         llm.startConversation(systemPrompt).use { conv ->
             val flow = if (images.isEmpty()) {
                 conv.sendUserMessage(prompt)
@@ -183,15 +208,16 @@ class ChatSession internal constructor(
         // conv 已 close,native session 已释放。后续 TTS 播 10+ 秒也不再占住 LiteRT-LM。
 
         val full = buf.toString().trim()
-        if (full.isNotEmpty()) {
+        if (full.isNotEmpty() && autoPlayTts) {
             try {
                 tts.speak(full, lang, ageBand)
             } catch (ce: kotlinx.coroutines.CancellationException) {
-                throw ce  // cancellation 必须透传,不能被吞
+                throw ce  //:cancellation 必须透传,不能被吞
             } catch (_: Throwable) {
                 // TTS 失败不影响对话流程,继续 emit AssistantDone 让 UI 解锁。
             }
         }
+        // autoPlayTts=false 时直接跳过 TTS,LLM 一收完立即解锁 UI(用户可点手动播放按钮)。
         // 记入历史。userText 取本轮"业务文本"(用户裸输入或首轮 SocraticPromptBuilder 输出),
         // 不把整段历史拼好的 prompt 再压回去 —— 否则下一轮 history 会指数爆炸。
         history += HistoryEntry(user = userText, assistant = full)
@@ -216,7 +242,7 @@ class ChatSession internal constructor(
     }
 
     private suspend fun processImages(images: List<ImageInput>): Pair<List<OcrResult>, List<Label>> {
-        // 每图独立 runCatching,一张图损坏不连坐整轮。
+        // C6:每图独立 runCatching,一张图损坏不连坐整轮。
         val ocrResults = images.mapNotNull { img -> runCatching { ocr.recognize(img) }.getOrNull() }
         val perPageLabels = images.map { img ->
             runCatching { labels.label(img, topK = 5) }.getOrDefault(emptyList())

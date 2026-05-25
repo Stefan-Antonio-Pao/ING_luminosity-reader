@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-app UI language list for LumiRead.
+  Android 13+ system Settings → "App language" reads this list to populate options.
+  The AppCompat 1.7+ backport reuses the same list on API 26-32.
+  -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="zh-CN" />
+    <locale android:name="en-US" />
+</locale-config>

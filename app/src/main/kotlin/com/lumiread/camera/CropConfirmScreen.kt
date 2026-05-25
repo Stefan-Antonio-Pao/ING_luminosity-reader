@@ -36,7 +36,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lumiread.R
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.min
@@ -45,9 +47,9 @@ import kotlin.math.min
  * 拍照后的手动裁切确认页。
  *
  * 全屏显示拍到的原图(EXIF 旋转后),叠一个可拖矩形;九区命中:
- *  - 4 个角(左上/右上/左下/右下)
- *  - 4 条边(上/下/左/右)
- *  - 矩形内部 → 整体平移
+ * - 4 个角(左上/右上/左下/右下)
+ * - 4 条边(上/下/左/右)
+ * - 矩形内部 → 整体平移
  *
  * 状态用图片像素坐标存,避免屏幕换算误差。点"确认"才裁剪落盘,返回新路径;
  * 点"重拍"什么也不写,调用方负责把原图删掉。
@@ -196,7 +198,7 @@ fun CropConfirmScreen(
             OutlinedButton(
                 modifier = Modifier.weight(1f),
                 onClick = onRetake,
-            ) { Text("🔄 重拍") }
+            ) { Text(stringResource(R.string.btn_retake)) }
 
             Button(
                 modifier = Modifier.weight(1f),
@@ -215,7 +217,7 @@ fun CropConfirmScreen(
                     )
                     onConfirm(outPath)
                 },
-            ) { Text("✓ 确认") }
+            ) { Text(stringResource(R.string.btn_confirm_crop)) }
         }
     }
 }

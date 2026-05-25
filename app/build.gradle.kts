@@ -22,7 +22,7 @@ android {
         versionCode   = 1
         versionName   = "0.1.0"
 
-        // 曳光弹(tracer-bullet)集成测试走 AndroidJUnitRunner,见 Gemma4EngineTracerTest。
+        // 集成冒烟测试走 AndroidJUnitRunner,见 Gemma4EngineTracerTest。
         // 真机跑:./gradlew :app:connectedDebugAndroidTest
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,6 +59,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.activity.compose)
+    // per-app locale 支持(LocaleManagerCompat / locales_config.xml 桥接)
+    implementation(libs.androidx.appcompat)
 
     // Compose (BOM 统一对齐版本)
     implementation(platform(libs.androidx.compose.bom))
@@ -97,7 +99,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // 曳光弹(tracer-bullet)仪表化测试(真机跑)
+    // 真机仪表化集成测试
     androidTestImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

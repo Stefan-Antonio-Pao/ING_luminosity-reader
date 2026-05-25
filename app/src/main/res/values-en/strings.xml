@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  English UI strings for LumiRead.
+  Mirror of res/values/strings.xml — keep keys and placeholder counts in sync.
+  -->
+<resources>
+    <!-- App identity -->
+    <string name="app_name" translatable="false">LumiRead</string>
+
+    <!-- Fake mode runtime banner: shown whenever any Fake* engine is wired in. -->
+    <string name="fake_mode_banner">FAKE MODE · demo stub · not real inference</string>
+
+    <!-- Generic buttons -->
+    <string name="btn_back">← Back</string>
+    <string name="btn_confirm">Confirm</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_send">Send</string>
+    <string name="btn_settings">⚙ Settings</string>
+    <string name="btn_my_learning">📚 My Learning</string>
+
+    <!-- Chat screen -->
+    <string name="chat_title_template">💬 LumiRead · %1$s · %2$s</string>
+    <string name="btn_new_session">↻ New session</string>
+    <string name="chat_input_placeholder_idle">Say something…</string>
+    <string name="chat_input_placeholder_replying">LumiRead is replying…</string>
+    <string name="bubble_n_images">📷 %1$d image(s)</string>
+    <string name="bubble_ocr_prefix">OCR: %1$s</string>
+    <string name="bubble_labels_prefix">Labels: %1$s</string>
+    <string name="bubble_empty">(empty message)</string>
+    <string name="assistant_thinking">(LumiRead is thinking…)</string>
+    <string name="error_images_cleared">The system cleared your photo. Please reshoot.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">LumiRead · Settings</string>
+    <string name="settings_section_model">🧠 Model</string>
+    <string name="settings_section_ui_language">🌐 App Language</string>
+    <string name="settings_section_output">Output</string>
+    <string name="settings_ui_lang_follow_system">Follow system</string>
+    <string name="settings_ui_lang_zh">中文</string>
+    <string name="settings_ui_lang_en">English</string>
+    <string name="settings_output_lang_value">Output language: %1$s</string>
+    <string name="settings_btn_toggle_lang">Toggle output language (EN ↔ ZH)</string>
+    <string name="settings_age_value">Age band: %1$s</string>
+    <string name="settings_btn_cycle_age">Cycle age band</string>
+    <string name="settings_ocr_mode_label">OCR mode: %1$s</string>
+    <string name="settings_ocr_mode_label_with_warning">OCR mode: %1$s  ※ Not supported on current model; falling back to OCR.</string>
+    <string name="ocr_mode_ocr">Standalone OCR (recommended)</string>
+    <string name="ocr_mode_multimodal">Native multimodal (experimental)</string>
+    <string name="settings_btn_toggle_ocr_mode">Toggle OCR ↔ multimodal</string>
+    <string name="settings_e2b_no_multimodal">%1$s does not support native multimodal. To enable it, install and switch to Gemma 4 E4B first.</string>
+    <string name="settings_multimodal_warn">(Experimental) On-device multimodal has heavy latency; first token may take 10+ seconds.</string>
+    <string name="settings_footer_note">(Language / age band / OCR mode / model are persisted via DataStore. Switching models ends the current session and reloads the engine.)</string>
+    <string name="settings_import_failed">⚠ Import failed: %1$s</string>
+
+    <!-- Model display names -->
+    <string name="model_e2b_display_name">Gemma 4 E2B (text-only, 2.59 GB)</string>
+    <string name="model_e4b_display_name">Gemma 4 E4B (multimodal, 3.66 GB)</string>
+
+    <!-- Model picker -->
+    <string name="model_switch_dialog_title">Switch to %1$s?</string>
+    <string name="model_switch_dialog_confirm">This will end the current session and reinitialize the engine (about 10 s). Continue?</string>
+    <string name="model_switch_dialog_not_installed">%1$s is not installed yet. Tap "Open HF" below to fetch the model file, then use "Import file" to load it.</string>
+    <string name="model_status_installed">✓ Installed</string>
+    <string name="model_status_missing">⚠ Not installed</string>
+    <string name="import_progress_with_total">Importing: %1$d / %2$d MB</string>
+    <string name="import_progress_no_total">Importing: %1$d MB</string>
+    <string name="btn_open_hf">Open HF</string>
+    <string name="btn_import_file">Import file</string>
+    <string name="btn_delete">Delete</string>
+
+    <!-- Capture screen -->
+    <string name="capture_status_hint">%1$d captured · crop dialog opens after each shot</string>
+    <string name="capture_failed">Capture failed: %1$s</string>
+    <string name="capture_in_progress">Capturing…</string>
+    <string name="btn_capture_another">📷 Capture (another)</string>
+    <string name="btn_chat_direct">💬 Chat directly</string>
+    <string name="btn_done_with_count">Done (%1$d) →</string>
+    <string name="btn_clear">Clear</string>
+    <string name="permission_camera_title">LumiRead needs the camera to photograph your book</string>
+    <string name="permission_camera_body">We don\'t upload images — everything is processed on-device.</string>
+    <string name="btn_grant_permission">Grant permission</string>
+
+    <!-- Crop confirm screen -->
+    <string name="btn_retake">🔄 Retake</string>
+    <string name="btn_confirm_crop">✓ Confirm</string>
+
+    <!-- Output mode section (v1.1 step 4) -->
+    <string name="settings_section_output_mode">🌏 Output mode</string>
+    <string name="output_mode_monolingual">Monolingual (follow output language)</string>
+    <string name="output_mode_bilingual">Bilingual (Chinese + English, paired)</string>
+    <string name="settings_output_mode_hint">In bilingual mode, Gemma puts the primary language (= output language) first and the other language on a new line, paired line by line. Independent of UI language and output language.</string>
+
+    <!-- TTS section (v1.1 step 3) -->
+    <string name="settings_section_tts">🔊 Speech</string>
+    <string name="settings_auto_play_tts">Auto-play AI responses</string>
+    <string name="settings_auto_play_tts_hint">When off, each response shows a "▶ Play" button so the child decides when to listen.</string>
+    <string name="btn_play">▶ Play</string>
+    <string name="btn_play_again">🔁 Play again</string>
+    <string name="btn_playing">Playing…</string>
+
+    <!-- Display mode section (UI overhaul step 2) -->
+    <string name="settings_section_mode">🎨 Display mode</string>
+    <string name="mode_child">Kids mode (cartoon)</string>
+    <string name="mode_parent">Parent mode (minimal)</string>
+    <!-- Parent gate (UI overhaul step 8) -->
+    <string name="parent_gate_title">Tap the bigger number</string>
+    <string name="parent_gate_subtitle">Just a soft block so kids don\'t leave by accident. Fully offline, no password.</string>
+    <string name="parent_gate_wrong">Not that one — try again.</string>
+    <string name="parent_gate_cancel">Cancel</string>
+    <string name="mode_demo_hint">Toggle above and watch the deep-blue card, gold action pill, cream backdrop, ink text, corners and type size all morph in ~450 ms.</string>
+    <string name="mode_demo_card">Mode transition demo</string>
+    <string name="mode_demo_pill">▶ Action button</string>
+    <string name="mode_demo_gallery_title">🧩 Component preview</string>
+    <string name="mode_demo_cta">Shoot</string>
+    <string name="mode_demo_counter">Pressed %1$d times</string>
+    <string name="mode_demo_select_a">Story A</string>
+    <string name="mode_demo_select_b">Story B</string>
+    <string name="mode_demo_switch">Auto-play</string>
+    <string name="mode_demo_gallery_hint">Tap the big circle for press-and-bounce + haptics; pick a story card; toggle the chunky switch; watch the star mascot fade in — kids mode only. Switch above to compare.</string>
+
+    <!-- My Learning screen -->
+    <string name="my_learning_title">📚 My Learning</string>
+    <string name="my_learning_empty">No learning records yet — try a reading session.</string>
+    <string name="my_learning_clear">Clear records</string>
+    <string name="my_learning_summary_header">Summary</string>
+    <string name="my_learning_summary_totals">Sessions: %1$d  ·  Total time: %2$s</string>
+    <string name="my_learning_summary_langs">Chinese: %1$d  ·  English: %2$d</string>
+    <string name="my_learning_record_meta">%1$s · %2$s · %3$d turn(s)</string>
+    <string name="my_learning_no_image_session">(text-only session)</string>
+</resources>

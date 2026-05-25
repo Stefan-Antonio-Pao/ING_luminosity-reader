@@ -12,9 +12,9 @@ import kotlinx.coroutines.withContext
  * 「学习记录」业务封装。把 Room 的 [StudyDao] 包成 UI 直接消费的形态。
  *
  * 调用点(详见 LumiReadApp.kt 的 `ChatEvent.AssistantDone` 分支):
- *  - 首轮:[beginSession] 插一行,返回新 `id` → `ChatState.studySessionId` 持有它。
- *  - 后续每轮:[recordTurn] 拿到 `id`,UPDATE `endedAt` + `turnCount + 1`。
- *  - 切「↻ 新会话」或冷启动:`ChatState.studySessionId` 置 null,下一条 user 触发 [beginSession] 起新行。
+ * - 首轮:[beginSession] 插一行,返回新 `id` → `ChatState.studySessionId` 持有它。
+ * - 后续每轮:[recordTurn] 拿到 `id`,UPDATE `endedAt` + `turnCount + 1`。
+ * - 切「↻ 新会话」或冷启动:`ChatState.studySessionId` 置 null,下一条 user 触发 [beginSession] 起新行。
  *
  * `endSession` 不存在——最后一轮 AssistantDone 已写好 `endedAt`,行本身就完结了。
  * 这样实现的好处:进程被系统杀也不会留下「行存在但 `endedAt < startedAt`」的脏行。
