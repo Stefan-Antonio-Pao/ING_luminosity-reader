@@ -14,13 +14,13 @@ import androidx.compose.ui.unit.dp
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 描边辅助按钮(part of the UI overhaul)。
+ * 描边辅助按钮(UI 改造任务书 §5.2 / §5.4,2026-05-25 步骤五)。
  *
  * 与 [LumiPrimaryButton] 成对:主操作走 Primary、次操作走 Outlined。
- * - **家长模式**:1dp tokens.primary 描边 + 透明底,视觉与原生 `OutlinedButton(...)` 等价
- * - **儿童模式**:同样 1dp 描边但圆角更大、字号更胖、按下回弹 —— 按下手感与 Primary 一致
+ *  - **家长模式**:1dp tokens.primary 描边 + 透明底,视觉与原生 `OutlinedButton(...)` 等价
+ *  - **儿童模式**:同样 1dp 描边但圆角更大、字号更胖、按下回弹 —— 按下手感与 Primary 一致
  *
- * 设计纪律(设计规范):描边色 / 文字色全部读 `tokens.primary`,不硬编码。
+ * 设计纪律(任务书 §10):描边色 / 文字色全部读 `tokens.primary`,不硬编码。
  * 描边宽度暂用 1dp(M3 默认),如儿童模式需更胖描边,日后追加 `borderWidth` token。
  */
 @Composable

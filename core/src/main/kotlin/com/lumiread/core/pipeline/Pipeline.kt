@@ -7,6 +7,8 @@ import com.lumiread.core.Lang
 import com.lumiread.core.OcrMode
 import com.lumiread.core.OcrResult
 import com.lumiread.core.OutputMode
+import com.lumiread.core.agent.SocraticEngine
+import com.lumiread.core.agent.TwoStagePipelineEngine
 import com.lumiread.core.llm.LlmEngine
 import com.lumiread.core.prompt.SocraticPromptBuilder
 import com.lumiread.core.tts.TtsEngine
@@ -18,7 +20,7 @@ import kotlinx.coroutines.flow.flow
 
 /**
  * 流水线事件。Reading 屏要把每一段都展示给用户(多页 OCR / 合并标签 / LLM 流式)。
- * 验证门要求"能打印出正确的文字与前 5 标签",所以 OCR/Labels 必须独立可见。
+ * Phase 2 验证门要求"能打印出正确的文字与前 5 标签",所以 OCR/Labels 必须独立可见。
  */
 sealed interface PipelineEvent {
     /** 单页 OCR 完成。[index] 0-based,[of] 总页数。 */
@@ -37,13 +39,23 @@ sealed interface PipelineEvent {
  * 多张支持:同一次伴读会话允许拍多张(比如绘本的左右两页 / 翻页阅读),
  * Pipeline 把所有页面的 OCR 文本拼成一段塞给 LLM,标签做 union + 去重 + Top-K。
  *
- * 的核心解耦点 —— Pipeline 不依赖任何 Android UI 类,可在 JVM 单测里跑。
+ * CLAUDE.md §4 的核心解耦点 —— Pipeline 不依赖任何 Android UI 类,可在 JVM 单测里跑。
  */
 class Pipeline(
     private val ocr: OcrService,
     private val labels: ImageLabelService,
     private val llm: LlmEngine,
     private val tts: TtsEngine,
+    /**
+     * v2.0.0 Step 4:每轮生成用的引擎。默认 [TwoStagePipelineEngine](保 :core JVM 单测行为不变);
+     * :app 注入 `AgentOrchestrator`(FC 优先 + 失败回退 TwoStage)。默认值可引用前面的 [llm] 参数。
+     */
+    private val socraticEngine: SocraticEngine = TwoStagePipelineEngine(llm),
+    /**
+     * v2.0.0 Stage 3:每轮指标回调(served-by / 延迟 / 工具),透传给 [ChatSession]。
+     * :core 默认 no-op;:app 注入记日志的 sink。
+     */
+    private val onMetrics: (com.lumiread.core.agent.TurnMetrics) -> Unit = {},
 ) {
     /**
      * 跑一次完整循环。事件顺序:多个 OcrPage → Labels → 多个 LlmChunk → Done。
@@ -83,10 +95,10 @@ class Pipeline(
     /**
      * 与 [run] 类似但同时驱动 TTS:**累积全部 LLM 文本,Done 时一次性合成播放**。
      *
-     * 历史: v1 曾做"按句切分边出边播"试图降低首声延迟。2026-05-24 PKJ110 实测发现:
-     * 1. VITS 每次 `generateWithCallback` 在内部独立计算韵律,句间衔接出现回零重起,听感破碎
-     * 2. CPU provider 上 EN 段单次合成本身 ~28 s,流式切句节省的几秒钟相对 TTS 总时长可忽略
-     * 3. 短句(如 "好可爱!")喂 VITS 上下文不足,韵律抖动更明显
+     * 历史:Phase 4 v1 曾做"按句切分边出边播"试图降低首声延迟。2026-05-24 PKJ110 实测发现:
+     *  1. VITS 每次 `generateWithCallback` 在内部独立计算韵律,句间衔接出现回零重起,听感破碎
+     *  2. CPU provider 上 EN 段单次合成本身 ~28 s,流式切句节省的几秒钟相对 TTS 总时长可忽略
+     *  3. 短句(如 "好可爱!")喂 VITS 上下文不足,韵律抖动更明显
      * 因此回到最朴素方案:LLM 全跑完 → 整段合成 → 播放。UI 文字仍按 `LlmChunk` 实时显示,
      * 不受 TTS 影响;`Done` 在 TTS 播放完成后发出,与原版保持一致。
      */
@@ -117,7 +129,7 @@ class Pipeline(
     /**
      * 启动一段多轮伴读对话。
      *
-     * 重构:不再在这里 createConversation —— ChatSession 改为每轮一条新的 Conversation
+     * Phase 6 重构:不再在这里 createConversation —— ChatSession 改为每轮一条新的 Conversation
      * (LiteRT-LM 0.12 native session 锁约束,详见 ChatSession 文档)。这里只缓存 systemPrompt,
      * ChatSession 拿到 [llm] 后自行管理 per-turn Conversation 生命周期。
      */
@@ -129,10 +141,12 @@ class Pipeline(
         outputMode: OutputMode = OutputMode.MONOLINGUAL,
     ): ChatSession {
         val sys = SocraticPromptBuilder.systemPrompt(outputLang, ageBand, outputMode)
+        // v2.0.0 Step 4:每轮生成走注入的 [socraticEngine]——:app 传 AgentOrchestrator(FC 优先 + 失败
+        // 回退 TwoStage);:core 单测用默认 TwoStagePipelineEngine。
         return ChatSession(
             ocr = ocr,
             labels = labels,
-            llm = llm,
+            engine = socraticEngine,
             systemPrompt = sys,
             tts = tts,
             lang = outputLang,
@@ -140,6 +154,7 @@ class Pipeline(
             ocrMode = ocrMode,
             autoPlayTts = autoPlayTts,
             outputMode = outputMode,
+            onMetrics = onMetrics,
         )
     }
 }

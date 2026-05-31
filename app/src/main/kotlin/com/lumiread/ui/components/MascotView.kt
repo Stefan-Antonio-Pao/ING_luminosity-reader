@@ -15,19 +15,19 @@ import androidx.compose.ui.unit.dp
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 吉祥物占位视图(part of the UI overhaul)。
+ * 吉祥物占位视图(UI 改造任务书 §5.5 / §6.2,2026-05-25 步骤四)。
  *
- * **当前版本是占位**,真正的 Lottie 待机/反应/庆祝动画推迟到后续版本:
- * - 设计纪律明令禁止"凭记忆写 Lottie/字体坐标与许可"
- * - 设计规范强调 Lottie 动画文件**各有许可,须核对可商用并致谢**
- * - will一次性核对许可、下载文件、入 THIRD_PARTY_NOTICES.md
+ * **本步骤是占位**,真正的 Lottie 待机/反应/庆祝动画推迟到步骤六:
+ *  - 任务书 §10 红线明令禁止"凭记忆写 Lottie/字体坐标与许可"
+ *  - 任务书 §5.5 强调 Lottie 动画文件**各有许可,须核对可商用并致谢**
+ *  - 步骤六会一次性核对许可、下载文件、入 THIRD_PARTY_NOTICES.md
  *
  * 当前实现:几何抽象星形(★ Unicode glyph)+ 圆底,**原创且与任何 IP 无关**
- * (设计纪律:不得复刻爆款幼儿 IP / 抄某 App 视觉资产)。
+ * (任务书 §10 红线:不得复刻爆款幼儿 IP / 抄某 App 视觉资产)。
  *
  * 可见性:
- * - 整体 alpha = `tokens.mascotAlpha`(家长 0 → 完全隐形;儿童 1 → 完全可见)
- * - 双模式之间会随 [LumiTheme] 的 playfulness 在 450ms 内淡入淡出
+ *  - 整体 alpha = `tokens.mascotAlpha`(家长 0 → 完全隐形;儿童 1 → 完全可见)
+ *  - 双模式之间会随 [LumiTheme] 的 playfulness 在 450ms 内淡入淡出
  */
 @Composable
 fun MascotView(

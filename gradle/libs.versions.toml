@@ -1,41 +1,41 @@
 # Version catalog —— 所有外部坐标的唯一来源。
-# 修改任何条目前请先核对相应官方来源(maven.google.com / kotlinlang.org / dl.google.com),
-# 并在 commit message 中引用其出处。
+# 修改任何条目前请先核对 docs/FACTS.md 中相应章节,并在 commit message 引用其出处。
 
 [versions]
-# Build toolchain (核对自 dl.google.com / services.gradle.org / kotlinlang.org)
-agp                 = "9.2.1"     # AGP, 见 maven-metadata.xml of com.android.tools.build:gradle
+# Build toolchain (核对自 dl.google.com / services.gradle.org / kotlinlang.org, 2026-05-23)
+agp                 = "9.2.1"     # FACTS#F2.1 是 LiteRT-LM 版本;AGP 见 maven-metadata.xml of com.android.tools.build:gradle
 kotlin              = "2.3.21"    # 最新稳定,见 kotlinlang.org/docs/releases.html
-ksp                 = "2.3.8"     # KSP 自 2.3.7 起改 single-number 版本制,target Kotlin 2.3
+ksp                 = "2.3.8"     # 核对自 repo.maven.apache.org KSP maven-metadata.xml 2026-05-24;KSP 自 2.3.7 起改 single-number 版本制,target Kotlin 2.3
 
-# AndroidX 基础
+# AndroidX 基础(见 FACTS#F5 / RESEARCH §7)
 core-ktx            = "1.13.1"
 lifecycle           = "2.8.7"
 activity-compose    = "1.12.4"
 compose-bom         = "2026.05.01"
+# AppCompat —— FACTS#F10,v1.1 步骤二全局英文界面,仅为 AppCompatDelegate.setApplicationLocales 引入
 # 核对自 dl.google.com/android/maven2/androidx/appcompat/appcompat/maven-metadata.xml,2026-05-25
 appcompat           = "1.7.1"
 
-# CameraX
+# CameraX —— FACTS#F5
 camerax             = "1.3.4"
 
-# ML Kit(bundled 版,首启即离线可用)
+# ML Kit —— FACTS#F3(bundled 版,首启即离线可用)
 mlkit-text          = "16.0.1"
 mlkit-text-zh       = "16.0.1"
 mlkit-langid        = "17.0.6"
 mlkit-labeling      = "17.0.9"
 
-# LiteRT-LM —— 钉死 0.12.0(核对自 dl.google.com 的 maven-metadata.xml)
+# LiteRT-LM —— FACTS#F2.1 钉死 0.12.0(核对自 dl.google.com 的 maven-metadata.xml)
 litertlm            = "0.12.0"
 
-# 持久化
+# 持久化(Phase 5)
 datastore           = "1.1.1"
 room                = "2.6.1"
 
 # 测试
 junit               = "4.13.2"
 coroutines          = "1.9.0"
-# AndroidX 仪表化测试 —— 核对自 dl.google.com maven-metadata.xml
+# AndroidX 仪表化测试(Phase 3 曳光弹)—— 核对自 dl.google.com maven-metadata.xml,2026-05-24
 androidx-test-ext   = "1.3.0"     # androidx.test.ext:junit
 androidx-test-runner = "1.7.0"    # androidx.test:runner
 
@@ -44,13 +44,13 @@ androidx-test-runner = "1.7.0"    # androidx.test:runner
 androidx-core-ktx            = { group = "androidx.core",              name = "core-ktx",                       version.ref = "core-ktx" }
 androidx-lifecycle-runtime   = { group = "androidx.lifecycle",         name = "lifecycle-runtime-ktx",          version.ref = "lifecycle" }
 androidx-activity-compose    = { group = "androidx.activity",          name = "activity-compose",               version.ref = "activity-compose" }
+androidx-appcompat           = { group = "androidx.appcompat",         name = "appcompat",                      version.ref = "appcompat" }
 androidx-compose-bom         = { group = "androidx.compose",           name = "compose-bom",                    version.ref = "compose-bom" }
 androidx-compose-ui          = { group = "androidx.compose.ui",        name = "ui" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui",        name = "ui-graphics" }
 androidx-compose-ui-tooling  = { group = "androidx.compose.ui",        name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-material3   = { group = "androidx.compose.material3", name = "material3" }
-androidx-appcompat           = { group = "androidx.appcompat",         name = "appcompat",                      version.ref = "appcompat" }
 
 # CameraX
 androidx-camera-core         = { group = "androidx.camera", name = "camera-core",       version.ref = "camerax" }
@@ -64,7 +64,7 @@ mlkit-text-recognition-chinese = { group = "com.google.mlkit", name = "text-reco
 mlkit-language-id              = { group = "com.google.mlkit", name = "language-id",               version.ref = "mlkit-langid" }
 mlkit-image-labeling           = { group = "com.google.mlkit", name = "image-labeling",            version.ref = "mlkit-labeling" }
 
-# LiteRT-LM
+# LiteRT-LM —— Phase 3 才直接引用,见 FACTS#F2
 litertlm-android             = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 
 # 持久化
@@ -77,7 +77,7 @@ androidx-room-compiler         = { group = "androidx.room",      name = "room-co
 junit4                         = { group = "junit",                                  name = "junit",                             version.ref = "junit" }
 kotlinx-coroutines-test        = { group = "org.jetbrains.kotlinx",                  name = "kotlinx-coroutines-test",           version.ref = "coroutines" }
 kotlinx-coroutines-core        = { group = "org.jetbrains.kotlinx",                  name = "kotlinx-coroutines-core",           version.ref = "coroutines" }
-# AndroidX 仪表化测试 —— 只用于 :app androidTest
+# AndroidX 仪表化测试 —— Phase 3 曳光弹(CLAUDE.md §B2),只用于 :app androidTest
 androidx-test-ext-junit        = { group = "androidx.test.ext",                      name = "junit",                             version.ref = "androidx-test-ext" }
 androidx-test-runner           = { group = "androidx.test",                          name = "runner",                            version.ref = "androidx-test-runner" }
 

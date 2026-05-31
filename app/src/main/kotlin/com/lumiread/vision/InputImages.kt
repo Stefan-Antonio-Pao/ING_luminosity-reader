@@ -10,7 +10,7 @@ import com.lumiread.core.ImageInput
  *
  * 来源:ML Kit 官方文档 https://developers.google.com/ml-kit/vision/image-labeling/android,
  * 以及 https://developer.android.com/reference/com/google/mlkit/vision/common/InputImage
- * ( 引用)。InputImage.fromBitmap 要 0/90/180/270 度的 rotation;
+ * (FACTS.md#F3 引用)。InputImage.fromBitmap 要 0/90/180/270 度的 rotation;
  * fromFilePath 自动读 EXIF。这里我们用 Bitmap 路径以便对相同 Bitmap 复用两个识别器。
  */
 internal object InputImages {

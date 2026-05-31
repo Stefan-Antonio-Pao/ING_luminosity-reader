@@ -21,15 +21,15 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * 庆祝动效覆盖层(part of the UI overhaul)。
+ * 庆祝动效覆盖层(UI 改造任务书 §5.4,2026-05-25 步骤六)。
  *
  * 触发器(`trigger`)递增即触发一轮:N 颗星从屏幕中心向外飞,走 [Motion.PlayfulSpring]
  * (HighBouncy / StiffnessLow)—— 过冲明显、慢回弹,符合"庆祝/强调"语义。
  *
  * 视觉:
- * - 颜色用 `tokens.primary`(儿童态行动金 / 家长态 M3 紫),与按钮焦点色一致
- * - 透明度同步 `tokens.decorDensity`:家长 = 0(完全不可见,即便误触发也不打扰),儿童 = 1
- * - 8 颗五角星,随机角度 ±15° 抖动,随机大小 16–28dp
+ *  - 颜色用 `tokens.primary`(儿童态行动金 / 家长态 M3 紫),与按钮焦点色一致
+ *  - 透明度同步 `tokens.decorDensity`:家长 = 0(完全不可见,即便误触发也不打扰),儿童 = 1
+ *  - 8 颗五角星,随机角度 ±15° 抖动,随机大小 16–28dp
  *
  * 性能:不挡触摸(`Modifier.fillMaxSize` 的 Box 本身不接收事件;Canvas 也是被动绘制)。
  * 单次触发约 800ms 后所有 Animatable 静止,无持续 recompose 成本。

@@ -7,12 +7,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 家长模式令牌(UI overhaul)。
+ * 家长模式令牌(UI 改造任务书 §4)。
  *
- * **= v1.1 改造前的简洁现状**,但用 M3 light 默认色显式建模 —— 逐屏接入
- * token 化按钮时,确保 `LumiPrimaryButton(parent)` 看起来与原生 `Button` 等价。
+ * **= v1.1 改造前的简洁现状**,但用 M3 light 默认色显式建模 —— 步骤五逐屏接入
+ * token 化按钮时,确保 `LumiPrimaryButton(parent)` 看起来与原生 `Button()` 等价。
  *
- * later(2026-05-25)调整:`primary` 从中性灰 `#E7E0EC` 改为 M3 light primary
+ * 步骤五(2026-05-25)调整:`primary` 从中性灰 `#E7E0EC` 改为 M3 light primary
  * `#6750A4`,`onPrimary` 从墨黑改为白 —— 这样原有 Material `Button(...)` 替换为
  * `LumiPrimaryButton(...)` 后,**家长模式像素级一致**(填充色、文字色都对得上)。
  *

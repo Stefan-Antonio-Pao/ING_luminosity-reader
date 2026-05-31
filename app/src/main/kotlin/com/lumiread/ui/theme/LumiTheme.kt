@@ -16,9 +16,9 @@ import androidx.compose.ui.graphics.lerp as colorLerp
 import androidx.compose.ui.unit.lerp as unitLerp
 
 /**
- * 双模式主题入口(UI overhaul)。
+ * 双模式主题入口(UI 改造任务书 §3.3)。
  *
- * later(2026-05-25)字体:儿童模式统一使用 **ZCOOL KuaiLe / 站酷快乐体**
+ * 步骤六(2026-05-25)字体:儿童模式统一使用 **ZCOOL KuaiLe / 站酷快乐体**
  * (SIL OFL 1.1,圆胖 Comic 风 Heavy weight,单字体覆盖 Latin + Simplified Chinese)。
  *
  * **2026-05-25 简化修订**:原本通过 `Typeface.CustomFallbackBuilder` 把 Luckiest Guy(Latin)
@@ -29,11 +29,11 @@ import androidx.compose.ui.unit.lerp as unitLerp
  * **字体全覆盖修复**:在儿童模式下用 token 字体重建整套 Typography 后传给
  * `MaterialTheme(typography = ...)`,所有 `style = MaterialTheme.typography.X` 的 Text 自动卡通。
  *
- * - `playfulness = 0` ⇔ [LumiMode.Parent]
- * - `playfulness = 1` ⇔ [LumiMode.Child]
- * - 切换 mode 时 `animateFloatAsState` 用 450ms `FastOutSlowInEasing` 在 0↔1 之间平滑过渡
- * - 数值字段(Dp/TextUnit/Float/Color)用 `lerp` 同时插值
- * - 字体不可 lerp,在中点(playfulness > 0.5)硬翻一次
+ *  - `playfulness = 0` ⇔ [LumiMode.Parent]
+ *  - `playfulness = 1` ⇔ [LumiMode.Child]
+ *  - 切换 mode 时 `animateFloatAsState` 用 450ms `FastOutSlowInEasing` 在 0↔1 之间平滑过渡
+ *  - 数值字段(Dp/TextUnit/Float/Color)用 `lerp` 同时插值
+ *  - 字体不可 lerp,在中点(playfulness > 0.5)硬翻一次
  */
 @Composable
 fun LumiTheme(mode: LumiMode, ageBand: AgeBand, content: @Composable () -> Unit) {
@@ -49,7 +49,7 @@ fun LumiTheme(mode: LumiMode, ageBand: AgeBand, content: @Composable () -> Unit)
         label = "playfulness",
     )
     val tokens = LumiTokens(
-        // 颜色族 —— primary / onPrimary / ink 三档恒定(设计规范:行动金恒定),仅 brand / surfaceBg 变
+        // 颜色族 —— primary / onPrimary / ink 三档恒定(任务书 §7:行动金恒定),仅 brand / surfaceBg 变
         primary      = colorLerp(ParentTokens.primary, childTokens.primary, playfulness),
         onPrimary    = colorLerp(ParentTokens.onPrimary, childTokens.onPrimary, playfulness),
         brand        = colorLerp(ParentTokens.brand, childTokens.brand, playfulness),

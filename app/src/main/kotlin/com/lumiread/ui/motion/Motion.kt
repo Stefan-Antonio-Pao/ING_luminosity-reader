@@ -5,14 +5,14 @@ import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 
 /**
- * 命名弹簧预设(part of the UI overhaul)。
+ * 命名弹簧预设(UI 改造任务书 §5.4,2026-05-25 步骤四)。
  *
  * 核心理念:**主要交互一律用 spring,禁止线性 tween**。
  * 预备 → 挤压拉伸 → 超调回弹 是儿童感的来源。
  *
- * - [PressSpring](MediumBouncy / StiffnessMedium):按下回弹,响应快、回弹明显但不过冲
- * - [PopInSpring](LowBouncy / StiffnessMediumLow):柔和登场,首帧从小放大轻微超调
- * - [PlayfulSpring](HighBouncy / StiffnessLow):庆祝/强调,过冲明显、慢回弹
+ *  - [PressSpring](MediumBouncy / StiffnessMedium):按下回弹,响应快、回弹明显但不过冲
+ *  - [PopInSpring](LowBouncy / StiffnessMediumLow):柔和登场,首帧从小放大轻微超调
+ *  - [PlayfulSpring](HighBouncy / StiffnessLow):庆祝/强调,过冲明显、慢回弹
  *
  * Float 型预设已经实例化(给 `animateFloatAsState` / `Animatable<Float>` 直接用)。
  * Dp / TextUnit 等其它类型需要时调用泛型工厂([pressSpring] 等)就地构造。

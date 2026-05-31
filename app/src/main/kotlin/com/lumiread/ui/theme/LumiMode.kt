@@ -1,10 +1,10 @@
 package com.lumiread.ui.theme
 
 /**
- * 双模式开关(UI overhaul)。
+ * 双模式开关(UI 改造任务书 §3.1)。
  *
- * - [Child]:儿童模式 / 卡通皮肤。默认值。
- * - [Parent]:家长模式 / 现有简洁风(= v1.1 改造前的现状,逐屏比对必须一致)。
+ *  - [Child]:儿童模式 / 卡通皮肤。默认值。
+ *  - [Parent]:家长模式 / 现有简洁风(= v1.1 改造前的现状,逐屏比对必须一致)。
  *
  * 通过 [com.lumiread.data.SettingsRepository.lumiModeFlow] 持久化(DataStore key="lumi_mode"),
  * 由 [LumiTheme] 订阅并据此选定 [LumiTokens]。

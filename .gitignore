@@ -56,13 +56,10 @@ tmp/
 temp/
 .claude/
 
-# Process / planning documents that live only in the private working copy
-docs/FACTS.md
-docs/PROGRESS.md
-docs/ASSUMPTIONS.md
-docs/RESEARCH.md
-docs/PUBLIC_MANIFEST.md
-docs/spikes/
+# Process / planning documents that live only in the private working copy.
+# The entire docs/ tree (FACTS, PROGRESS, ASSUMPTIONS, RESEARCH, RESEARCH_FC,
+# DEV_LOG, PUBLIC_MANIFEST, UPDATE_NOTES, spikes/ …) is internal — never publish.
+docs/
 
 # One-shot verification scaffolds (their conclusions are promoted into core/)
 spike/

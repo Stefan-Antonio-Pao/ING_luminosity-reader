@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 /**
- * 用户设置持久化。
+ * 用户设置持久化(CLAUDE.md §2.5–2.6 + Phase 5 衔接 + v1.1 双模型架构)。
  *
  * 用 `androidx.datastore-preferences` 把"输出语言 / 年龄段 / OCR 模式 / 选中的 Gemma 模型"四个
  * 枚举存到磁盘,App 启动时各 Flow 直接发射上次的值,UI 用 `collectAsState` 订阅 →
@@ -25,9 +25,9 @@ import kotlinx.coroutines.flow.map
  * 没值时给安全默认:[Lang.EN] / [AgeBand.PRESCHOOL] / [OcrMode.OCR] / [GemmaModel.E2B]。
  *
  * **v1.1(2026-05-25)新增**:
- * - [selectedModelFlow]:用户选的 Gemma 模型(E2B / E4B)。默认 E2B(原行为)
- * - [effectiveOcrModeFlow]:派生流 —— 当选中模型不支持多模态时强制返回 [OcrMode.OCR],
- * 避免 E2B + MULTIMODAL 的崩溃组合。**UI 与 ChatSession 都用这个**,不读裸 [ocrModeFlow]
+ *  - [selectedModelFlow]:用户选的 Gemma 模型(E2B / E4B)。默认 E2B(原行为)
+ *  - [effectiveOcrModeFlow]:派生流 —— 当选中模型不支持多模态时强制返回 [OcrMode.OCR],
+ *    避免 E2B + MULTIMODAL 的崩溃组合。**UI 与 ChatSession 都用这个**,不读裸 [ocrModeFlow]
  */
 private val Context.userPrefs by preferencesDataStore(name = "user_prefs")
 
@@ -70,8 +70,8 @@ class SettingsRepository(private val context: Context) {
      * **生效**的 OCR 模式(v1.1 2026-05-25)。
      *
      * 派生规则:
-     * - 选中模型 [GemmaModel.supportsMultimodal] = true → 用 [ocrModeFlow] 原值
-     * - 否则 → 强制 [OcrMode.OCR]
+     *  - 选中模型 [GemmaModel.supportsMultimodal] = true → 用 [ocrModeFlow] 原值
+     *  - 否则 → 强制 [OcrMode.OCR]
      *
      * 这样用户在 E4B 下选过 MULTIMODAL,切回 E2B 不会崩(自动回 OCR);再切回 E4B 时,
      * 之前的 MULTIMODAL 偏好会自动恢复(因为 DataStore 里的 [ocrModeFlow] 没被改动)。
@@ -83,7 +83,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * 自动朗读开关(v1.1,2026-05-25)。默认 true(保留 起的既有行为)。
+     * 自动朗读开关(v1.1 步骤三,2026-05-25)。默认 true(保留 Phase 4 起的既有行为)。
      *
      * - true:LLM 回复结束后,ChatSession 自动调 [com.lumiread.core.tts.TtsEngine.speak] 朗读
      * - false:不自动朗读;UI 在每条助手气泡旁显示手动播放按钮,由孩子自己点
@@ -95,10 +95,10 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * 输出模式(v1.1,2026-05-25)。默认 [OutputMode.MONOLINGUAL]。
+     * 输出模式(v1.1 步骤四,2026-05-25)。默认 [OutputMode.MONOLINGUAL]。
      *
-     * - [OutputMode.MONOLINGUAL]:Gemma 仅用 [langFlow] 指定的那一种语言输出(v1.0 行为)
-     * - [OutputMode.BILINGUAL]:中英成对输出,主语种 = [langFlow],副语种 = 另一个
+     *  - [OutputMode.MONOLINGUAL]:Gemma 仅用 [langFlow] 指定的那一种语言输出(v1.0 行为)
+     *  - [OutputMode.BILINGUAL]:中英成对输出,主语种 = [langFlow],副语种 = 另一个
      *
      * 与 [langFlow] / [ocrModeFlow] / [selectedModelFlow] / [autoPlayTtsFlow] / 界面语言完全正交,
      * 互不联动(任务书 v1.1 §2 反复强调)。
@@ -109,10 +109,10 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * 双模式 UI 开关(UI overhaul,2026-05-25)。默认 [LumiMode.Child]。
+     * 双模式 UI 开关(UI 改造任务书 §3.1,2026-05-25)。默认 [LumiMode.Child]。
      *
-     * - [LumiMode.Child]:卡通皮肤(逐步落地)
-     * - [LumiMode.Parent]:= v1.1 改造前的简洁风(回归校验基准)
+     *  - [LumiMode.Child]:卡通皮肤(步骤三起逐步落地)
+     *  - [LumiMode.Parent]:= v1.1 改造前的简洁风(步骤一回归校验基准)
      *
      * 由 [com.lumiread.ui.theme.LumiTheme] 订阅。**纯表现层**,与 v1.1 全部业务设置完全正交:
      * 切换 LumiMode 不影响 Lang / AppUiLang / OutputMode / OcrMode / GemmaModel / autoPlayTts。

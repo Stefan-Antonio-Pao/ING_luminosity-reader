@@ -9,18 +9,18 @@ import androidx.compose.ui.Modifier
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * App 级背景容器(part of the UI overhaul)。
+ * App 级背景容器(UI 改造任务书 §6.2,2026-05-25 步骤四)。
  *
- * this iteration只**铺底色** `tokens.surfaceBg`(儿童 Cream / 家长白)。
+ * 步骤四阶段只**铺底色** `tokens.surfaceBg`(儿童 Cream / 家长白)。
  *
- * 设计规范提到"内容浅底 Cream + 卡面白 + 柔和阴影",§6.2 提到首页"柔和渐变背景"。
- * 渐变 / 星光装饰由 `tokens.decorDensity` 控制密度,推迟到后续版本(吉祥物 / Lottie / 庆祝动效一并)
- * —— 此处先把入口留好,避免逐屏接入时再来回改导入。
+ * 任务书 §5.2 提到"内容浅底 Cream + 卡面白 + 柔和阴影",§6.2 提到首页"柔和渐变背景"。
+ * 渐变 / 星光装饰由 `tokens.decorDensity` 控制密度,推迟到步骤六(吉祥物 / Lottie / 庆祝动效一并)
+ * —— 此处先把入口留好,避免步骤五逐屏接入时再来回改导入。
  *
- * 用法(接入后):
+ * 用法(步骤五时):
  * ```
  * AppBackground {
- * LumiReadApp
+ *     LumiReadApp()
  * }
  * ```
  */

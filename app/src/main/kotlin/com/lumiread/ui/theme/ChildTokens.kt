@@ -9,16 +9,17 @@ import androidx.compose.ui.unit.sp
 import com.lumiread.R
 
 /**
- * 儿童模式令牌(UI overhaul,2026-05-25)。
+ * 儿童模式令牌(UI 改造任务书 §5)。
  *
- * 配色 / 形状 / 尺寸全部取自 UI overhaul 设计稿真值;字体族(ZCOOL KuaiLe)的许可、下载、
- * 致谢都已记入 THIRD_PARTY_NOTICES.md。
+ * 步骤三(2026-05-25)**正式落地**:配色 / 形状 / 尺寸全部按任务书 §5.2 / §5.3 取真值。
+ * 字体族留到步骤五前与 Lottie 一并核对许可、下载、记入 THIRD_PARTY_NOTICES.md
+ * (任务书 §10 红线:"凭记忆写 Lottie/字体坐标与许可"被明令禁止)。
  *
- * 配色 —— **暖金 + 沉静深蓝**,承接 App 图标"夜空发光的星照着翻开的书"意象。
+ * 配色源(§5.2)—— **暖金 + 沉静深蓝**,承接 App 图标"夜空发光的星照着翻开的书"意象。
  * 纪律:深蓝管沉静、暖金管点亮、浅底保通透;每屏一个主导面 + 暖金焦点,避免七彩平均堆砌。
  *
- * 这些值在 ChildAgeBandTokens 中按年龄段微调(主按钮触控目标、回弹幅度、装饰密度);
- * [LumiTheme] 在 mode == Child 时把它们注入 [LocalLumiTokens]。
+ * 这些值**目前仍仅 [ModeSwitchSection] 的过渡演示卡读取**;现有 4 个 UI 文件继续读
+ * `MaterialTheme.colorScheme.*` —— 家长模式回归底线不动。步骤五"逐屏套用"才会让全 App 接入。
  */
 val ChildTokens = LumiTokens(
     // 颜色族(§5.2)
@@ -38,21 +39,21 @@ val ChildTokens = LumiTokens(
     bodySp = 20.sp,                     // 正文 ≥18sp
 
     // 尺寸(§5.3)
-    minTouch = 72.dp,                   // 主按钮 ≥72dp(Toddler 档在 ChildAgeBandTokens 中放大到 ≥88dp)
+    minTouch = 72.dp,                   // 主按钮 ≥72dp(Toddler 档步骤七再放大到 ≥88dp)
 
-    // 动效预算
+    // 动效预算(§5.4,步骤四 BouncyButton 才读取)
     bounceDepth = 0.08f,                // 按下缩到 0.92
 
-    // 装饰开关
+    // 装饰开关(步骤六落地)
     mascotAlpha = 1f,                   // 吉祥物可见
     decorDensity = 1f,                  // 背景装饰开启
 
-    // 字体(2026-05-25)
+    // 字体(步骤六,2026-05-25;统一字体修订 2026-05-25)
     // ZCOOL KuaiLe / 站酷快乐体:SIL OFL 1.1,圆胖儿童 Comic 风 Heavy weight,
     // 单字体覆盖 Latin + Simplified Chinese,无需 fallback 链。
     // 来源:https://github.com/google/fonts/tree/main/ofl/zcoolkuaile
     // 文件:res/font/zcool_kuaile.ttf
-    // 致谢见 THIRD_PARTY_NOTICES.md
+    // 致谢见 THIRD_PARTY_NOTICES.md(任务书 §10 红线已合规)
     fontFamily = FontFamily(Font(R.font.zcool_kuaile, FontWeight.Black)),
     fontWeight = FontWeight.Black,
 )

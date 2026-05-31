@@ -54,14 +54,14 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * CameraX 多张拍照取景屏。
+ * CameraX 多张拍照取景屏(FACTS#F5)。
  *
  * - 用 [LifecycleCameraController] + [PreviewView] 包进 Compose 的 [AndroidView]。
  * - 模式 = `CAPTURE_MODE_MAXIMIZE_QUALITY`,绘本是静态近景 → 单次 `takePicture`。
  * - **拍后手动裁切**:每张拍完进入 [CropConfirmScreen],用户拖矩形选区确认才入批。
  * - **多张支持**:一批裁好的路径累计在 `capturedPaths`,点"完成 (N)"一次性交给 Pipeline。
  * - 拍完写到 `context.cacheDir`,裁切后再写一份 `crop-*.jpg`,原图删除。
- * - 权限走 `ActivityResultContracts.RequestPermission`。
+ * - 权限走 `ActivityResultContracts.RequestPermission()`。
  */
 @Composable
 fun CameraCaptureScreen(
@@ -147,7 +147,7 @@ fun CameraCaptureScreen(
                     },
                 )
                 // 左上返回:半透明圆形浮层,适合任意相机画面;走 onCancel ——
-                // 有进行中会话回 CHAT,否则在 LumiReadApp 里 fall back 到 Activity.finish
+                // 有进行中会话回 CHAT,否则在 LumiReadApp 里 fall back 到 Activity.finish()
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)

@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Default (Simplified Chinese) UI strings for LumiRead.
-  English translations live in res/values-en/strings.xml — both files must keep
-  the same key set and the same number of placeholders per key.
+  v1.1 步骤二:LumiRead 默认(中文)UI 文案。
+  英文对照见 res/values-en/strings.xml,clip-and-edit 两份必须同名 key 同数量 placeholder。
   -->
 <resources>
     <!-- App identity -->
     <string name="app_name" translatable="false">LumiRead</string>
 
-    <!-- Fake mode runtime banner: shown whenever any Fake* engine is wired in. -->
-    <string name="fake_mode_banner">FAKE MODE · 演示桩件 · 非真实推理</string>
+    <!-- Fake mode banner (CLAUDE.md §C5) -->
+    <string name="fake_mode_banner">FAKE MODE · 演示桩件 · 非真实推理(CLAUDE.md §C5)</string>
 
     <!-- Generic buttons -->
     <string name="btn_back">← 返回</string>
@@ -100,11 +99,11 @@
     <string name="btn_play_again">🔁 再听一遍</string>
     <string name="btn_playing">朗读中…</string>
 
-    <!-- Display mode section -->
+    <!-- Display mode section (UI 改造步骤二) -->
     <string name="settings_section_mode">🎨 显示模式</string>
     <string name="mode_child">儿童模式(卡通)</string>
     <string name="mode_parent">家长模式(简洁)</string>
-    <!-- Parent gate (Child → Parent mode soft block) -->
+    <!-- Parent gate (UI 改造步骤八) -->
     <string name="parent_gate_title">点击较大的数字</string>
     <string name="parent_gate_subtitle">仅为防止小朋友误触离开,完全离线、不存密码。</string>
     <string name="parent_gate_wrong">不对哦,试试另一个。</string>

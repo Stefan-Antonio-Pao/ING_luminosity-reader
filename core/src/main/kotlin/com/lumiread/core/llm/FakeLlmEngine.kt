@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flow
 /**
  * 假 LLM:按词切分一段固定 reply,模拟流式输出。
  *
- * **运行时水印**:每段输出前会带 [FAKE_PREFIX] 标识,
+ * **运行时水印**(CLAUDE.md §C5):每段输出前会带 [FAKE_PREFIX] 标识,
  * 防止录演示视频或给评委看时把桩件输出误当成真实功能。
  *
  * 多轮:[startConversation] 返回的 [FakeConversation] 会按轮数切不同回复。

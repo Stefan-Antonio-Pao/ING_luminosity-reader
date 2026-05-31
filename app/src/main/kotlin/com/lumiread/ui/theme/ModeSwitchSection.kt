@@ -28,11 +28,11 @@ import com.lumiread.R
 import kotlinx.coroutines.launch
 
 /**
- * 双模式切换 UI(UI overhaul)。
+ * 双模式切换 UI(UI 改造任务书 §3.1 / §6.1)。
  *
- * 入口位置:设置页顶部"清晰入口"(家长模式视角)。
+ * 入口位置(步骤六前):设置页顶部"清晰入口"(任务书 §6.1 家长模式视角)。
  *
- * **2026-05-25 later**:接入家长门(§6.3)。儿童 → 家长方向弹 [ParentGateDialog]
+ * **2026-05-25 步骤八**:接入家长门(§6.3)。儿童 → 家长方向弹 [ParentGateDialog]
  * 做"点击较大数字"轻量验证;家长 → 儿童无需验证直通。
  */
 @Composable

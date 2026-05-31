@@ -20,19 +20,19 @@ import com.lumiread.ui.theme.LocalLumiTokens
 import kotlinx.coroutines.delay
 
 /**
- * 错峰登场列表 + 子项工具(part of the UI overhaul)。
+ * 错峰登场列表 + 子项工具(UI 改造任务书 §5.4,2026-05-25 步骤四)。
  *
- * 设计规范:"登场 Pop-in 错峰蹦出"。子项按 [staggerMs] 间隔依次出现:
- * - scale: 0.6 → 1(走 [Motion.PopInSpring] 超调回弹)
- * - alpha: 0 → 1(220ms 线性补,纯透明度无需弹簧)
+ * 任务书 §5.4:"登场 Pop-in 错峰蹦出"。子项按 [staggerMs] 间隔依次出现:
+ *  - scale: 0.6 → 1(走 [Motion.PopInSpring] 超调回弹)
+ *  - alpha: 0 → 1(220ms 线性补,纯透明度无需弹簧)
  *
  * **家长模式策略**:`tokens.mascotAlpha == 0f` ⇔ 家长模式 → **跳过 staggered 动画**,
- * 子项一次性出现。这是设计规范"家长模式近乎无动效"的体现:用 mascotAlpha 作 mode 信号,
+ * 子项一次性出现。这是任务书 §4 "家长模式近乎无动效"的体现:用 mascotAlpha 作 mode 信号,
  * 避免再引一个独立的 token。
  *
  * **两个 API**:
- * - [PopInList]:便利封装,直接传 items 列表 + itemContent
- * - [PopInItem]:暴露的子项原语,任意布局(Row / Box / FlowRow)中按 index 错峰登场
+ *  - [PopInList]:便利封装,直接传 items 列表 + itemContent
+ *  - [PopInItem]:暴露的子项原语,任意布局(Row / Box / FlowRow)中按 index 错峰登场
  */
 @Composable
 fun <T> PopInList(

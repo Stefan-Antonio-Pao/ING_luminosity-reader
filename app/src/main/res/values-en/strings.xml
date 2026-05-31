@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  English UI strings for LumiRead.
+  v1.1 Step 2: English UI strings for LumiRead.
   Mirror of res/values/strings.xml — keep keys and placeholder counts in sync.
   -->
 <resources>
     <!-- App identity -->
     <string name="app_name" translatable="false">LumiRead</string>
 
-    <!-- Fake mode runtime banner: shown whenever any Fake* engine is wired in. -->
-    <string name="fake_mode_banner">FAKE MODE · demo stub · not real inference</string>
+    <!-- Fake mode banner (CLAUDE.md §C5) -->
+    <string name="fake_mode_banner">FAKE MODE · demo stub · not real inference (CLAUDE.md §C5)</string>
 
     <!-- Generic buttons -->
     <string name="btn_back">← Back</string>

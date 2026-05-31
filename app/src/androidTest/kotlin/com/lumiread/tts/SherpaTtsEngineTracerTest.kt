@@ -13,29 +13,29 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 集成冒烟测试:在真机上跑一次 sherpa-onnx,断言"中英两段都能合成 + 已知 sampleRate +
+ * §B2 曳光弹:在真机上跑一次 sherpa-onnx,断言"中英两段都能合成 + 已知 sampleRate +
  * 首样本回调延迟在预算内 + 总样本数合理"。
  *
  * 跑法:
- * 1. 先 push TTS 模型(用户必做,见 TtsModelProvider 文档):
- * adb shell mkdir -p /sdcard/Android/data/com.lumiread/files/vits-melo-tts-zh_en/dict
- * adb push <local>/vits-melo-tts-zh_en/. /sdcard/Android/data/com.lumiread/files/vits-melo-tts-zh_en/
- * 2. ( 同样要求)Gemma 模型也需就位,因 connectedDebugAndroidTest 会清空 files/
- * 3. ./gradlew :app:connectedDebugAndroidTest
+ *   1. 先 push TTS 模型(用户必做,见 TtsModelProvider 文档):
+ *        adb shell mkdir -p /sdcard/Android/data/com.lumiread/files/vits-melo-tts-zh_en/dict
+ *        adb push <local>/vits-melo-tts-zh_en/. /sdcard/Android/data/com.lumiread/files/vits-melo-tts-zh_en/
+ *   2. (Phase 3 同样要求)Gemma 模型也需就位,因 connectedDebugAndroidTest 会清空 files/
+ *   3. ./gradlew :app:connectedDebugAndroidTest
  *
  * 故意**绕过** [SherpaTtsEngine.speak]:本测试只验 sherpa-onnx 的 `generateWithCallback` 真实
  * 跑通中英文,**不触发 AudioTrack 物理播放**(JUnit 仪表化环境播音会被 logcat 截、且对断言无意义)。
- * 真实播放路径由人耳回归验证。
+ * 真实播放路径由检查点 ② 人耳冒烟。
  *
  * 断言策略(TTS 合成是确定性的,但具体 sample 数仍因文本而变,故只验结构):
- * - 中英两段都成功跑完(不抛异常)
- * - 每段 sampleRate 在已知集合 {16000, 22050, 24000, 44100, 48000} 内
- * - 每段 samples 数 > 1000(任何合理 TTS 都不止 1000 个 PCM 样本)
- * - 每段 首样本回调延迟 ≤ 2000 ms(基线;实测数字写 Log 供人工评估)
+ *   - 中英两段都成功跑完(不抛异常)
+ *   - 每段 sampleRate 在已知集合 {16000, 22050, 24000, 44100, 48000} 内
+ *   - 每段 samples 数 > 1000(任何合理 TTS 都不止 1000 个 PCM 样本)
+ *   - 每段 首样本回调延迟 ≤ 2000 ms(基线;实测数字写 Log 供检查点 ② 评估)
  *
  * Log 输出格式:
- * TRACER: zh first-sample=Xms, sampleRate=Y, samples=N, total=Tms
- * TRACER: en first-sample=Xms, sampleRate=Y, samples=N, total=Tms
+ *   TRACER: zh first-sample=Xms, sampleRate=Y, samples=N, total=Tms
+ *   TRACER: en first-sample=Xms, sampleRate=Y, samples=N, total=Tms
  */
 @RunWith(AndroidJUnit4::class)
 class SherpaTtsEngineTracerTest {
@@ -115,8 +115,8 @@ class SherpaTtsEngineTracerTest {
         )
         // 首样本延迟在 CPU provider 上是分钟级别(PKJ110 实测 zh ~3s / en ~30s),
         // 远高于 spike note §6 的 2 s 目标基线。基线是 GPU/NPU 走通后的目标,
-        // 不是硬验收 —— 只需确保回调被触发(firstSampleMs > 0)即可,
-        // 实测数字供人工评估(可能促发切 GPU/NPU 的调优)。
+        // 不是硬验收 —— Phase 4 §B2 只需确保回调被触发(firstSampleMs > 0)即可,
+        // 实测数字写入 PROGRESS.md 与检查点 ② 评估(可能促发 Phase 6 切 GPU/NPU 的调优单)。
         assertTrue(
             "$tag 流式回调应被触发(firstSampleMs 必须 > 0),实测 ${firstSampleMs}ms",
             firstSampleMs > 0,

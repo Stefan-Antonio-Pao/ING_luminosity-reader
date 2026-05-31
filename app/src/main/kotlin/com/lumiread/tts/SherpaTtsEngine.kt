@@ -19,30 +19,31 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * sherpa-onnx 1.13.2 + vits-melo-tts-zh_en 上的中英 TTS 引擎。
+ * sherpa-onnx 1.13.2 + vits-melo-tts-zh_en 上的中英 TTS 引擎(CLAUDE.md §5 Phase 4)。
  *
- * 签名来源:核对自
- * `raw.githubusercontent.com/k2-fsa/sherpa-onnx/master/sherpa-onnx/kotlin-api/Tts.kt`,2026-05-24。
+ * 签名来源:`docs/spikes/sherpaonnx_NOTE.md` §2,核对自
+ *   `raw.githubusercontent.com/k2-fsa/sherpa-onnx/master/sherpa-onnx/kotlin-api/Tts.kt`,2026-05-24。
+ * 见 FACTS#F4(🟢 VERIFIED 2026-05-24)。
  *
  * 关键事实(直接决定本类的形状):
- * - `OfflineTts(assetManager, config)` 同步构造读 ~170 MB ONNX,耗时 1–3 s → Dispatchers.IO + 单例
- * - `generateWithCallback(text, sid, speed, callback)` 边合成边回调每个 chunk(PCM FloatArray);
- * 回调返回 1 继续、0 停止 → 配合 `AudioTrack(MODE_STREAM, PCM_FLOAT)` 边收边播,显著降低首声延迟
- * - **sampleRate 必须 init 后即从 `OfflineTts.sampleRate` 取真值再建 AudioTrack**。
- * melo-tts-zh_en 真实采样率是 **44100 Hz**(HuggingFace 模型卡 + JNI `sampleRate` 双重确认),
- * 2026-05-24 之前我们写死 22050 → AudioTrack 把 44100 样本按 22050 播 → 听感"诡异半速慢放"。
- * 修复:warmUp 末尾从引擎读出真值并缓存到 [sampleRate]。
- * - 不可重入:并发调两次 `generate*` 会破坏内部状态 → 全程 Mutex 串行化
- * - JNI 资源:进程退出由 `finalize` 兜底;主动 `free` 留给 内存紧张时使用
+ *  - `OfflineTts(assetManager, config)` 同步构造读 ~170 MB ONNX,耗时 1–3 s → Dispatchers.IO + 单例
+ *  - `generateWithCallback(text, sid, speed, callback)` 边合成边回调每个 chunk(PCM FloatArray);
+ *    回调返回 1 继续、0 停止 → 配合 `AudioTrack(MODE_STREAM, PCM_FLOAT)` 边收边播,显著降低首声延迟
+ *  - **sampleRate 必须 init 后即从 `OfflineTts.sampleRate()` 取真值再建 AudioTrack**。
+ *    melo-tts-zh_en 真实采样率是 **44100 Hz**(HuggingFace 模型卡 + JNI `sampleRate()` 双重确认),
+ *    2026-05-24 之前我们写死 22050 → AudioTrack 把 44100 样本按 22050 播 → 听感"诡异半速慢放"。
+ *    修复:warmUp() 末尾从引擎读出真值并缓存到 [sampleRate]。
+ *  - 不可重入:并发调两次 `generate*` 会破坏内部状态 → 全程 Mutex 串行化
+ *  - JNI 资源:进程退出由 `finalize()` 兜底;主动 `free()` 留给 Phase 6 内存紧张时使用
  *
  * 语速:**永远 1.0f**。
  * 2026-05-24 PKJ110 实测:`speed != 1.0` 在 VITS-melo 上声学畸变明显(尤其 0.85 慢速场景
  * 出现"诡异慢速"),且 LLM 已按年龄段缩短/简化句式,无需再在合成器侧二次缩放。
- * "降语速 0.85–0.9" 原意是匹配儿童听感,实测发现 VITS 训练语速本身已偏柔,
- * 直接 1.0 听感最自然。**`ageBand` 参数保留但本类不使用**,留给 若换 TTS 引擎时复用。
+ * CLAUDE.md §3.4 "降语速 0.85–0.9" 原意是匹配儿童听感,实测发现 VITS 训练语速本身已偏柔,
+ * 直接 1.0 听感最自然。**`ageBand` 参数保留但本类不使用**,留给 Phase 6 若换 TTS 引擎时复用。
  *
  * `lang` 当前不映射到 sid:melo-tts-zh_en 是中英混读单模型(sid=0)。
- * 若人耳验证发现英文音色异常,留 调优。
+ * 若检查点 ② 发现英文音色异常,留 Phase 6 调优单。
  */
 class SherpaTtsEngine(private val context: Context) : TtsEngine {
 
@@ -50,12 +51,12 @@ class SherpaTtsEngine(private val context: Context) : TtsEngine {
     private val speakMutex = Mutex()
 
     @Volatile private var tts: OfflineTts? = null
-    // 真实采样率,warmUp 末尾从 OfflineTts.sampleRate 读取。<=0 表示尚未初始化。
+    // 真实采样率,warmUp() 末尾从 OfflineTts.sampleRate() 读取。<=0 表示尚未初始化。
     @Volatile private var sampleRate: Int = 0
 
     @Volatile private var stopped = false
 
-    /** speak 期间的当前 AudioTrack。回调线程通过它写 PCM。 */
+    /** speak() 期间的当前 AudioTrack。回调线程通过它写 PCM。 */
     @Volatile private var currentTrack: AudioTrack? = null
 
     /**
@@ -104,7 +105,7 @@ class SherpaTtsEngine(private val context: Context) : TtsEngine {
                 ),
             )
             // 必须在 build AudioTrack **之前**拿到真实采样率,否则会出现半速/倍速畸变。
-            // OfflineTts.sampleRate 是 JNI 直查模型 meta,无需先 generate。
+            // OfflineTts.sampleRate() 是 JNI 直查模型 meta,无需先 generate。
             sampleRate = engine.sampleRate()
             tts = engine
             Log.i(TAG, "SherpaTtsEngine 初始化完成,采样率=${sampleRate}Hz,耗时=${System.currentTimeMillis() - t0}ms")

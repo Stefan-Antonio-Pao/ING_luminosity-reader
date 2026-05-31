@@ -5,7 +5,7 @@ import com.lumiread.core.Label
 
 /**
  * 假 ImageLabel:返回固定 5 个标签。
- * **运行时水印**:第一个标签名带 [FAKE] 前缀。
+ * **运行时水印**(CLAUDE.md §C5):第一个标签名带 [FAKE] 前缀。
  */
 class FakeImageLabelService(
     private val canned: List<Label> = listOf(

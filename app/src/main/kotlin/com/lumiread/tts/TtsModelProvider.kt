@@ -4,46 +4,46 @@ import android.content.Context
 import java.io.File
 
 /**
- * TTS 模型文件定位。
+ * TTS 模型文件定位(CLAUDE.md §7,FACTS#F4 模型清单)。
  *
- * 走 ADB_PUSHED:开发期/评委交付期由人手把 `vits-melo-tts-zh_en` 的文件**平铺**推到应用专属外部目录:
+ * Phase 4 走 ADB_PUSHED:开发期/评委交付期由人手把 `vits-melo-tts-zh_en` 的文件**平铺**推到应用专属外部目录:
  *
- * adb push <local>/vits-melo-tts-zh_en/model.onnx \
- * <local>/vits-melo-tts-zh_en/lexicon.txt \
- * <local>/vits-melo-tts-zh_en/tokens.txt \
- * <local>/vits-melo-tts-zh_en/date.fst \
- * <local>/vits-melo-tts-zh_en/number.fst \
- * <local>/vits-melo-tts-zh_en/phone.fst \
- * <local>/vits-melo-tts-zh_en/new_heteronym.fst \
- * /sdcard/Android/data/com.lumiread/files/
+ *   adb push <local>/vits-melo-tts-zh_en/model.onnx \
+ *            <local>/vits-melo-tts-zh_en/lexicon.txt \
+ *            <local>/vits-melo-tts-zh_en/tokens.txt \
+ *            <local>/vits-melo-tts-zh_en/date.fst \
+ *            <local>/vits-melo-tts-zh_en/number.fst \
+ *            <local>/vits-melo-tts-zh_en/phone.fst \
+ *            <local>/vits-melo-tts-zh_en/new_heteronym.fst \
+ *            /sdcard/Android/data/com.lumiread/files/
  *
  * **为什么平铺(2026-05-24 PKJ110 Android 16 实测发现)**:
  * Android 11+ scoped storage 下,`adb shell mkdir` 创建的子目录由 `shell` UID 拥有,
  * 而 `/sdcard/Android/data/<pkg>/files/` 本体由应用 UID 拥有。FUSE 权限层会拒绝
  * 应用进程枚举 shell-拥有的子目录(虽然 posix `drwxrws---` 看似 OK)。
- * 表现:`File("…/files/vits-melo-tts-zh_en/model.onnx").exists` 返回 false,即便文件已 push。
- * 而 `files/` 根目录由应用 UID 拥有,push 进去的文件可读 —— 的 Gemma 就是这么走的。
+ * 表现:`File("…/files/vits-melo-tts-zh_en/model.onnx").exists()` 返回 false,即便文件已 push。
+ * 而 `files/` 根目录由应用 UID 拥有,push 进去的文件可读 —— Phase 3 的 Gemma 就是这么走的。
  * 故平铺,与 Gemma 同一目录共存。
  *
- * 注意: 已知 `connectedDebugAndroidTest` 重装 APK 会清空 `/sdcard/Android/data/<pkg>/files/`,
- * 每次集成冒烟测试前需重新 push 模型(LLM + TTS 两套)。 接 EXTERNAL_DOWNLOAD 后可缓解。
+ * 注意:Phase 3 已知 `connectedDebugAndroidTest` 重装 APK 会清空 `/sdcard/Android/data/<pkg>/files/`,
+ * 每次跑曳光弹前需重新 push 模型(LLM + TTS 两套)。Phase 5 接 EXTERNAL_DOWNLOAD 后可缓解。
  *
  * 必需文件(三件,缺一报 TtsModelMissingException):
- * files/
- * ├── model.onnx (~170 MB,VITS 主模型)
- * ├── lexicon.txt (~6.84 MB,中英混合发音词典)
- * ├── tokens.txt (~655 B,token → id 映射)
- * ├── gemma-4-E2B-it.litertlm ( LLM,与本期共存)
- * └── date.fst, number.fst, phone.fst, new_heteronym.fst (可选 ruleFsts)
+ *   files/
+ *     ├── model.onnx     (~170 MB,VITS 主模型)
+ *     ├── lexicon.txt    (~6.84 MB,中英混合发音词典)
+ *     ├── tokens.txt     (~655 B,token → id 映射)
+ *     ├── gemma-4-E2B-it.litertlm  (Phase 3 LLM,与本期共存)
+ *     └── date.fst, number.fst, phone.fst, new_heteronym.fst  (可选 ruleFsts)
  *
  * 不再支持 jieba `dict/` 子目录(同样的子目录权限问题)。melo-tts-zh_en 基础调用只需
  * model/lexicon/tokens 三件即可发声(官方 Android demo `SherpaOnnxTts/MainActivity.kt` 范例)。
  *
  * 事实来源:
- * - 官方 CLI 例子(`k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/vits.html`):
- * melo-tts-zh_en 基础调用只需 model/lexicon/tokens 三件,dict-dir 与 rule-fsts 是进阶可选
- * - 官方 Android demo(`SherpaOnnxTts/MainActivity.kt`):melo-tts 范例里 dictDir = "" 与 ruleFsts = ""
- * - 2026-05-24 核对 + Android 16 FUSE 子目录权限验证
+ *  - 官方 CLI 例子(`k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/vits.html`):
+ *    melo-tts-zh_en 基础调用只需 model/lexicon/tokens 三件,dict-dir 与 rule-fsts 是进阶可选
+ *  - 官方 Android demo(`SherpaOnnxTts/MainActivity.kt`):melo-tts 范例里 dictDir = "" 与 ruleFsts = ""
+ *  - 2026-05-24 核对 + Android 16 FUSE 子目录权限验证
  */
 object TtsModelProvider {
 

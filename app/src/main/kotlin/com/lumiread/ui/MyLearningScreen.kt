@@ -35,19 +35,19 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * (下半)「我的学习」页 + UI 改造步骤 5d(2026-05-25)。
+ * Phase 5(下半)「我的学习」页 + UI 改造步骤 5d(2026-05-25)。
  *
  * 来源:[com.lumiread.data.StudyStore.all] 由 Room 实时推送,Composable 用
- * `collectAsState(emptyList)` 订阅 → 改动立即重绘。
+ * `collectAsState(emptyList())` 订阅 → 改动立即重绘。
  *
  * 双模式视觉(步骤 5d):
- * - 整屏:[AppBackground] 铺 `surfaceBg`
- * - 聚合卡:[PlayfulCard] 大圆角(儿童 28dp / 家长 12dp),内含"📚"标记
- * - 记录卡:token 驱动 Box(`surfaceBg` + 浅描边),儿童态自然更圆胖
- * - 顶栏返回 / 底部清空:TextButton 文字色对齐 `tokens.primary`
+ *  - 整屏:[AppBackground] 铺 `surfaceBg`
+ *  - 聚合卡:[PlayfulCard] 大圆角(儿童 28dp / 家长 12dp),内含"📚"标记
+ *  - 记录卡:token 驱动 Box(`surfaceBg` + 浅描边),儿童态自然更圆胖
+ *  - 顶栏返回 / 底部清空:TextButton 文字色对齐 `tokens.primary`
  *
- * 不做的事:不按周/月分组;不画时间序列图;星星贴纸 / 庆祝动画推迟到步骤 6
- * 吉祥物 / Lottie 一并(设计规范)。
+ * 不做的事:不按周/月分组(Phase 6);不画时间序列图;星星贴纸 / 庆祝动画推迟到步骤 6
+ * 吉祥物 / Lottie 一并(任务书 §6.2)。
  */
 @Composable
 fun MyLearningScreen(
@@ -100,7 +100,7 @@ fun MyLearningScreen(
                     }
                 }
 
-                // 清空记录(本期单次点击直接清, 加二次确认)
+                // 清空记录(本期单次点击直接清,Phase 6 加二次确认)
                 HorizontalDivider()
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),

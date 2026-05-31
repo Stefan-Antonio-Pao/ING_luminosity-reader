@@ -6,19 +6,19 @@ import androidx.compose.ui.unit.sp
 import com.lumiread.core.AgeBand
 
 /**
- * 儿童模式年龄段微调(part of the UI overhaul)。
+ * 儿童模式年龄段微调(UI 改造任务书 §7,2026-05-25 步骤七)。
  *
  * **仅儿童模式生效**;家长模式 LumiTheme 忽略 ageBand 参数,值不变化。
  *
- * 设计纪律:
- * - **暖金 Action Gold 恒定为行动色** —— `primary` / `onPrimary` 三档相同
- * - **字体、装饰开关、墨色 ink 也恒定** —— fontFamily / mascotAlpha / decorDensity / ink 不变
- * - 仅主导面 / 氛围色 `brand` / `surfaceBg` 与"体感"维度(尺寸 / 字号 / 圆角 / 动效幅度)随龄变化
+ * 任务书 §7 红线:
+ *  - **暖金 Action Gold 恒定为行动色** —— `primary` / `onPrimary` 三档相同
+ *  - **字体、装饰开关、墨色 ink 也恒定** —— fontFamily / mascotAlpha / decorDensity / ink 不变
+ *  - 仅主导面 / 氛围色 `brand` / `surfaceBg` 与"体感"维度(尺寸 / 字号 / 圆角 / 动效幅度)随龄变化
  *
  * 设计语言:
- * - **Toddler(1.5~3 岁)**:暖金奶白主导、最大触控 88dp、字号 36/22sp、bounce 0.12 最夸张
- * - **Preschool(3~5 岁)**:天空蓝品牌、72dp / 30/20sp / bounce 0.08 —— 与现有 ChildTokens 一致
- * - **Preadolescent(6~10 岁)**:深靛蓝收敛、60dp / 26/18sp / bounce 0.05
+ *  - **Toddler(1.5~3 岁)**:暖金奶白主导、最大触控 88dp、字号 36/22sp、bounce 0.12 最夸张
+ *  - **Preschool(3~5 岁)**:天空蓝品牌、72dp / 30/20sp / bounce 0.08 —— 与现有 ChildTokens 一致
+ *  - **Preadolescent(6~10 岁)**:深靛蓝收敛、60dp / 26/18sp / bounce 0.05
  *
  * 切换 ageBand 时令牌瞬时跳变(playfulness=1 时 lerp 输出 = childTokens 直接值);
  * mode 切换的 450ms 平滑过渡机制不受影响。

@@ -16,6 +16,23 @@
 
 ---
 
+## 🚀 Start Here — For Everyone (No Tech Needed)
+
+New here? You don't need to know anything about code.
+
+- **Just want to use it?** Download the latest **APK** from the [Releases](../../releases)
+  page and install it on an Android phone. That's all.
+- **Which AI "brain" should I pick?** (in the app's Settings)
+  - **Younger children →** *E2B + separate OCR* — faster, with a more natural
+    back-and-forth feel.
+  - **Older children →** *E4B + separate OCR*.
+  - The all-in-one **multimodal** mode is still experimental and **not very stable —
+    choose it with caution.**
+- On first launch the app downloads its offline AI model once (a few GB, Wi-Fi
+  recommended). After that, everything runs without internet.
+
+---
+
 ## Table of contents
 
 1. [Overview](#1-overview)
@@ -30,6 +47,7 @@
 10. [License](#10-license)
 11. [Contributing](#11-contributing)
 12. [Roadmap](#12-roadmap)
+13. [Changelog](#13-changelog)
 
 ---
 
@@ -89,11 +107,18 @@ reading companionship reachable for families and classrooms that cloud-based app
 
 ## 3. Features
 
-What ships in v1.2.0 and is actually wired up end-to-end:
+What ships in v2.0.0 and is actually wired up end-to-end:
 
 - **Snap-a-page reading companion.** Take a single photo of a spread,
   align it inside the on-screen frame, and the app produces a spoken
   "praise → explanation → invitation" reply tied to what is visible.
+- **Native Gemma 4 function calling (with graceful fallback).** On a new
+  photo the model can **natively call an on-device tool** to classify the
+  scene (storybook page vs real-world object) and adapt its reply — real
+  on-device Kotlin executed via LiteRT-LM's tool API, not string parsing.
+  Whenever a tool call is unavailable or fails, it **falls back to the
+  two-stage text pipeline**, so the app never breaks. See §4 for the honest
+  reliability and latency picture.
 - **Dual-mode UI (Kids · Parent).** A whole-app theme switch: the **Kids**
   mode uses cartoon shapes, deep-blue + warm-gold tokens, the rounded
   **ZCOOL KuaiLe** display font, a bouncy press feedback, and a friendly
@@ -135,45 +160,97 @@ What ships in v1.2.0 and is actually wired up end-to-end:
 
 ## 4. How it works
 
-```
- ┌──────────┐     ┌────────────────────┐     ┌────────────────────┐
- │ CameraX  │ ──▶ │ ML Kit on-device   │ ──▶ │ Prompt builder     │
- │ single   │     │ • Text recognition │     │ • Persona          │
- │ capture  │     │   (Latin + 中文)   │     │ • Age band         │
- └──────────┘     │ • Image labeling   │     │ • Language         │
-                  │ • Language ID      │     │ • Rolling history  │
-                  └────────────────────┘     └─────────┬──────────┘
-                                                       │
-                                                       ▼
-                                          ┌──────────────────────┐
-                                          │ Gemma 4 E2B          │
-                                          │ via LiteRT-LM 0.12   │
-                                          │ • GPU backend        │
-                                          │ • Streaming tokens   │
-                                          └──────────┬───────────┘
-                                                     │
-                                                     ▼
-                                          ┌──────────────────────┐
-                                          │ sherpa-onnx + VITS   │
-                                          │ MeloTTS zh_en        │
-                                          │ • per-sentence       │
-                                          │ • AudioTrack stream  │
-                                          └──────────────────────┘
+Since **v2.0.0**, LumiRead is *agentic*: instead of always hand-assembling a text
+prompt, it lets Gemma 4 **natively call small on-device tools** and answer from their
+results. The earlier "OCR → concatenated text → text model" flow is **no longer the
+main path** — it is kept as the **fallback backbone** that guarantees the experience
+when function calling isn't available or doesn't pan out.
+
+**Runtime flow.**
+
+```mermaid
+flowchart TD
+    A[CameraX · single capture] --> B[ML Kit on-device OCR + image labeling]
+    B --> C{AgentOrchestrator · model & complexity policy}
+    C -- "E4B: tools always-on" --> D[FunctionCallingEngine · manual tool loop]
+    C -- "E2B: scene is complex" --> D
+    C -- "E2B simple / multimodal turn" --> F[TwoStagePipelineEngine · fallback backbone]
+    D --> E{Model emits a native tool call?}
+    E -- "classify_scene / lookup_word / read_aloud" --> G[Run the Kotlin tool offline]
+    G --> H[Feed the tool result back to the model]
+    H --> I[Model produces the final age-appropriate reply]
+    E -- "invalid / silent-drop / timeout / not called" --> F
+    I --> J[sherpa-onnx · VITS MeloTTS zh_en]
+    F --> J
+    J --> K[Child hears an age-appropriate question]
 ```
 
-**Two-stage instead of native multimodal.** End-to-end multimodal models
-on a phone today still cost 10+ seconds to first word, which destroys the
-"conversation" feel for a small child. We instead extract OCR text and the
-top image labels offline (a couple of hundred milliseconds), and feed a
-**text-only** prompt to Gemma 4. The native-multimodal path is still in
-the settings as an opt-in experiment for power users.
+**This is genuinely native function calling**, not string parsing. It goes through
+LiteRT-LM's tool API in **manual mode**, is triggered by Gemma 4's **native tool
+tokens**, runs real on-device Kotlin, and feeds results back via `ToolResponse` for the
+model to finish its answer.
 
-**Layered architecture.** The Android shell (`:app`) holds CameraX, ML Kit,
-LiteRT-LM, and sherpa-onnx integration. The reasoning pipeline (`:core`)
-is a plain Kotlin/JVM module behind small interfaces — `LlmEngine`,
-`TtsEngine`, `OcrService`, `ImageLabelService` — each of which has a Fake
-implementation that lets the whole UI flow run in a JVM unit test without
-any of the heavy native libraries loaded.
+**The three on-device tools** (fully offline, ≤2 params each — more tools measurably hurt
+on-device reliability, so the set is locked at three). Described **as they actually behave
+in this release**:
+
+- **`classify_scene(image_labels, ocr_text)`** — *fully working.* Decides whether the
+  photo is a storybook page or a real-world object, so the companion either reads along
+  or explains the object.
+- **`lookup_word(term)`** — registered and callable, but **this release ships no offline
+  dictionary**. It currently returns an age-appropriate *"let's figure it out together"*
+  response rather than a database definition. (No word database is bundled — see the
+  honest note below.)
+- **`read_aloud(text)`** — registered and callable, but replies are already narrated by
+  the always-on TTS layer, so this tool's effect is intentionally minimal in this release.
+
+**Module architecture.**
+
+```mermaid
+flowchart LR
+    UI["app · UI (unchanged)"] --> CS[ChatSession · per-session orchestration]
+    CS --> SE["SocraticEngine (interface)"]
+    SE -. "implemented by" .-> ORCH[AgentOrchestrator · model policy + fallback]
+    ORCH --> FCE[FunctionCallingEngine · manual tool loop]
+    ORCH --> TSE[TwoStagePipelineEngine · fallback backbone]
+    FCE --> TR["tools: classify_scene / lookup_word / read_aloud"]
+    FCE --> EP["EngineProvider · Gemma4Engine: E2B/E4B + GPU→CPU"]
+    TSE --> EP
+    CS --> PR["prompt: three age personas + OCR self-correction"]
+    CS --> TTS[sherpa-onnx TTS]
+```
+
+**Layered architecture.** The Android shell (`:app`) holds CameraX, ML Kit, LiteRT-LM,
+and sherpa-onnx integration. The reasoning pipeline (`:core`) is a plain Kotlin/JVM
+module behind small interfaces — `SocraticEngine`, `LlmEngine`, `TtsEngine`,
+`OcrService`, `ImageLabelService` — each with a Fake implementation, so the whole flow
+runs in JVM unit tests without any heavy native library loaded. `ChatSession` owns
+per-session orchestration (OCR, rolling history, TTS, events); `AgentOrchestrator`
+picks the engine (**E4B tools always-on / E2B only when the scene is complex**; multimodal
+turns go straight to two-stage) and does **buffered graceful fallback**;
+`FunctionCallingEngine` runs the manual agent loop (round cap, argument validation,
+silent-drop detection, timeout watchdog).
+
+**Why two-stage is still here (as the fallback).** End-to-end multimodal models on a
+phone today still cost 10+ seconds to first word, which destroys the "conversation" feel
+for a small child. The two-stage path extracts OCR text and top image labels offline
+(a couple hundred milliseconds) and feeds a **text-only** prompt to Gemma 4. A native
+multimodal mode (Gemma 4 E4B) is still in Settings as an opt-in experiment, with an
+explicit latency warning.
+
+**Fallback is the backbone, not a patch (honest).** On-device function calling is **not
+yet fully reliable**: a structured eval measured Gemma 4 E2B tool-call pass rate at about
+**71%**, dropping with more arguments. So **any** failure — invalid tool call, silent
+drop, timeout, failed validation, or the model simply not calling — **falls back to the
+two-stage text pipeline automatically**, and the app never crashes. Function calling is
+the highlight; **the reliable baseline is guaranteed by the fallback.**
+
+**Performance note (honest).** Usable function-calling latency depends on the GPU backend
+(~52 tok/s officially). On our test phone (a Snapdragon device) the GPU backend **did not
+initialize for either model and fell back to CPU**, so it was slow: we measured the full
+reply in about **16 s** for E2B and **46 s** for E4B (manual tool mode returns the whole
+message at once, not token-by-token). GPU-capable devices are much faster. **For demos we
+recommend *E2B + separate OCR*, or a device with a working GPU backend.**
 
 ---
 
@@ -404,14 +481,44 @@ Before submitting:
 ## 12. Roadmap
 
 Things we would like to build next, but **have not built yet**. None of
-the items below are present in v1.2.0.
+the items below are present in v2.0.0.
 
-- **Windows port** via UWP, sharing the `:core` pipeline.
+- **Age-specific research.** Conduct targeted studies and surveys with
+  children across age groups to learn which output styles and UI designs
+  each age responds to best, and optimize accordingly in future releases.
+- **Offline dictionary for `lookup_word`** (e.g. WordNet / CC-CEDICT) so
+  the tool returns real definitions instead of a fallback. *(Planned — not
+  in this release.)*
+- **Windows port** via UWP, sharing the `:core` pipeline. *(Planned.)*
 - **Per-page bookmark / dialog history** the child can revisit later.
 - **Parent-side weekly summary** generated locally and exported as PDF.
 - **Custom voices** trained from a parent's own short voice sample
   (research direction, no commitment).
 - **Tablet-optimized UI** with a side-by-side book + chat layout.
+
+---
+
+## 13. Changelog
+
+### v2.0.0 — native function-calling refactor (backend only, UI unchanged)
+
+- **Added** an agentic path that deeply leverages Gemma 4's native function calling
+  (LiteRT-LM manual tool mode): three offline tools `classify_scene` / `lookup_word` /
+  `read_aloud`, triggered by the model's **native tool tokens**, running real on-device
+  code, with results fed back to produce the final answer (not string parsing).
+- **Added** a modular `:core` agent layer: `SocraticEngine` interface +
+  `TwoStagePipelineEngine` (fallback backbone) + `FunctionCallingEngine` (manual loop +
+  validation + timeout watchdog) + `AgentOrchestrator` (model policy + buffered fallback).
+- **Added** model policy: **E4B tools always-on / E2B complexity-gated**; multimodal
+  turns fall through to the two-stage path.
+- **Added** a hidden warm-up generation after engine load to mitigate GPU first-call glitches.
+- **Added** per-turn served-by / latency metrics (to demonstrate the agentic loop).
+- **Kept** all v1.x features (dual-mode UI, three independent language settings, bilingual
+  output, TTS, voice input, "My Learning") with **zero UI changes**.
+- **Honest note**: on-device function calling is not yet fully reliable; the experience is
+  guaranteed by the **fallback backbone**, and latency is higher on GPU-unavailable devices (see §4).
+
+> For earlier releases (v1.0–v1.2), see §3 Features above.
 
 ---
 

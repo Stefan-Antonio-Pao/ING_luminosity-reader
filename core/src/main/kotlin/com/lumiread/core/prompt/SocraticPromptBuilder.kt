@@ -9,23 +9,23 @@ import com.lumiread.core.OutputMode
 /**
  * 把 (语言, 年龄段, OCR 文本, 图像标签) 拼成一段系统提示 + 用户提示。
  *
- * ** 2026-05-24 二次修订**:在"博学故事伙伴"基础上锁定三段式回应结构。
+ * **CLAUDE.md §6 2026-05-24 二次修订**:在"博学故事伙伴"基础上锁定三段式回应结构。
  *
  * 一次修订(2026-05-24 早):从"纯苏格拉底导师"放松为"每轮 1~2 件事自由组合",但模型偏向
  * 选"提问"动作,孩子反复被问、体验疲劳。
  *
  * 二次修订(2026-05-24 晚):用户要求每轮固定三段式 ——
- * 1. **夸赞**:先肯定孩子的提问/观察(温暖入口)
- * 2. **详细解释**:用孩子能听懂的话直接回答或讲知识点,可举例、比喻、续故事
- * 3. **拓展提问**:抛一个开放式问题引导继续观察/想象/思考
+ *  1. **夸赞**:先肯定孩子的提问/观察(温暖入口)
+ *  2. **详细解释**:用孩子能听懂的话直接回答或讲知识点,可举例、比喻、续故事
+ *  3. **拓展提问**:抛一个开放式问题引导继续观察/想象/思考
  *
  * 之所以是结构化而非自由组合:模型在"自由"模式下默认偏问句,孩子被反问太多;固定 1→2→3
  * 顺序保证每轮都给"知识/解释"的实质内容,问题只是收尾的拓展邀请。
  *
- * 长度按年龄段控,主要是 TTS 体验门槛( 实测 ZH 60 字 ~10 s)。三段式比一次修订更
+ * 长度按年龄段控,主要是 TTS 体验门槛(FACTS#F4 实测 ZH 60 字 ~10 s)。三段式比一次修订更
  * 密一些,所以上限略放宽;但仍要紧凑,避免长篇大论。
  *
- * 所有模板集中本文件, 调优入口 —— **不要散落到 UI 层**。
+ * 所有模板集中本文件,Phase 6 调优入口 —— **不要散落到 UI 层**。
  * 类名 [SocraticPromptBuilder] 保留以避免改动所有调用点。
  */
 object SocraticPromptBuilder {
@@ -66,6 +66,33 @@ object SocraticPromptBuilder {
         ageBand: AgeBand,
         outputMode: OutputMode = OutputMode.MONOLINGUAL,
     ): String = systemPersona(outputLang, ageBand, outputMode)
+
+    /**
+     * v2.0.0 Step 4:**仅函数调用路径**附加的工具使用说明块(任务书 §5)。
+     *
+     * 追加在系统提示之后(只在 [com.lumiread.core.agent] 的 FunctionCallingEngine 路径用;TwoStage 不加,
+     * 它没注册工具)。要点:声明可用工具、何时调用、**仅在有帮助时才调**(避免简单场景的工具税与翻车),
+     * 调完工具后仍按三段式给最终回答。工具名用 snake_case(与 LiteRT-LM 暴露给模型的一致)。
+     */
+    fun toolUsageBlock(lang: Lang): String = when (lang) {
+        Lang.ZH -> """
+
+            ——你还可以使用这些本地小工具(仅在确实有帮助时才用,简单场景直接回答即可):
+            - classify_scene:当孩子刚给你看一张**新图片**时,先用它判断这是"绘本页(book)"还是"眼前物品(object)"。**若返回 object:不要讲绘本故事**,改成用孩子能懂的话讲解这个物品(它是什么、有什么有趣之处),仍按年龄段与三段式;若返回 book,就正常伴读。
+            - lookup_word:当出现孩子可能不懂的词时,用它查一个适龄的小解释。
+            - read_aloud:偶尔用它把一个词或短语读出来给孩子听。
+            用完工具后,仍然按『夸赞 → 详细解释 → 拓展提问』三段式,用工具结果把回答讲得更准更生动。
+        """.trimIndent()
+
+        Lang.EN -> """
+
+            — You also have these small on-device tools (use them only when genuinely helpful; for simple cases just answer directly):
+            - classify_scene: when the child shows you a **new picture**, call it first to decide whether it is a storybook page ("book") or a real-world object ("object"). **If it returns object: do NOT tell a storybook story** — instead explain that object in words the child understands (what it is, what's interesting about it), still age-appropriate and in three parts; if it returns book, do normal reading companionship.
+            - lookup_word: when a word may be unfamiliar to the child, call it for an age-appropriate little explanation.
+            - read_aloud: occasionally use it to sound out a word or short phrase for the child.
+            After using a tool, still answer in the three parts (praise → detailed explanation → follow-up question), using the tool result to make your answer more accurate and vivid.
+        """.trimIndent()
+    }
 
     /** 多轮第一轮:把当前页素材 + 任务行作为首条用户消息发出。 */
     fun firstTurnContent(
@@ -146,8 +173,9 @@ object SocraticPromptBuilder {
             1. ${languageRuleZh(mode)}
             2. 风格:${styleZh(age)}
             3. 长度:${lengthHintZh(age)};三段要紧凑衔接,但"详细解释"必须有营养,不能一笔带过。${bilingualLengthNoteZh(mode)}
-            4. 没有绘本时,在"详细解释"部分可以编一个温暖、积极的小故事片段;"拓展提问"邀请孩子接龙。
+            4. 看到的若是眼前的物品(不是绘本),就讲解这个物品——它是什么、有什么有趣之处;没有绘本、孩子直接和你聊天时,可在"详细解释"里编一个温暖、积极的小故事片段,"拓展提问"邀请孩子接龙。
             5. 永远温暖、好奇、鼓励;不评判孩子的回答对错。
+            6. 我看到的"文字"来自拍照识别,可能有错别字或乱码。请结合图像标签**默默纠正**明显的识别错误、跳过读不通的乱码;但**绝不要编造**原文或画面里没有的内容。文字乱到没把握时,就改聊画面,或温和地请孩子把书放平再拍一张。
         """.trimIndent()
 
         Lang.EN -> """
@@ -163,15 +191,16 @@ object SocraticPromptBuilder {
             1. ${languageRuleEn(mode)}
             2. Style: ${styleEn(age)}
             3. Length: ${lengthHintEn(age)}; keep the three parts tight, but the "explanation" must be substantive, not a throwaway line.${bilingualLengthNoteEn(mode)}
-            4. When there is no picture book, the "explanation" part can be a warm, positive story fragment; the "follow-up question" then invites the child to continue with you.
+            4. If what you see is a real-world object (not a storybook), explain that object — what it is and what's interesting about it. When there is no book and the child is just chatting, the "explanation" can be a warm, positive story fragment, and the "follow-up question" invites the child to continue.
             5. Always warm, curious, encouraging; never judge the child's answer as wrong.
+            6. The "text" I see comes from photo recognition and may contain typos or garbled bits. Use the image labels to **silently correct** obvious recognition errors and skip unreadable gibberish; but **never fabricate** content not supported by the text or picture. If the text is too garbled to trust, talk about the picture instead, or gently ask the child to lay the book flat and retake the photo.
         """.trimIndent()
     }
 
     /**
-     * v1.1:语言规则。单语保持 v1.0 行为;双语下要求"中英成对、分行清晰、主语言在前"。
+     * v1.1 步骤四:语言规则。单语保持 v1.0 行为;双语下要求"中英成对、分行清晰、主语言在前"。
      *
-     * 设计要求"同一句先中文后英文成对输出";UI 上希望主语种由 [Lang] 决定(更对称、
+     * 任务书 §6 步骤四要求"同一句先中文后英文成对输出";UI 上希望主语种由 [Lang] 决定(更对称、
      * 教学价值更高),所以这里 [Lang.ZH] 时主语种=中文,[Lang.EN] 时主语种=英文。两者都"主在前、副在后"。
      */
     private fun languageRuleZh(mode: OutputMode): String = when (mode) {
@@ -222,7 +251,7 @@ object SocraticPromptBuilder {
      * 任务行 —— 二次修订:固定三段式『夸赞 → 详细解释 → 拓展提问』,不再让模型自由组合。
      * 多轮场景下首轮和后续轮共用同一句话:模型每轮都该看到结构提醒。
      *
-     * v1.1:双语模式追加"中英成对、分行清晰、主语言在前"提醒,作为系统提示的二次强调
+     * v1.1 步骤四:双语模式追加"中英成对、分行清晰、主语言在前"提醒,作为系统提示的二次强调
      * (单次注入容易被对话历史稀释,任务行每轮注入更稳)。
      */
     private fun taskLine(lang: Lang, age: AgeBand, mode: OutputMode): String = when (lang) {

@@ -10,19 +10,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * 模型文件定位与管理。
+ * 模型文件定位与管理(CLAUDE.md §7,FACTS#F7 / F1 / F1.E4B)。
  *
  * v1.1(2026-05-25)双模型重构:从单一文件常量改为按 [GemmaModel] 参数化。
  *
  * 文件位置统一在 `getExternalFilesDir(null)`(应用专属外部目录):
- * 1. 应用卸载自动清理,无需 storage 权限(Android 10+ scoped storage 友好)
- * 2. 容量足够装 6+ GB(E2B 2.59 + E4B 3.66)
- * 3. adb push 路径稳定:`adb push <file> /sdcard/Android/data/com.lumiread/files/`
+ *  1. 应用卸载自动清理,无需 storage 权限(Android 10+ scoped storage 友好)
+ *  2. 容量足够装 6+ GB(E2B 2.59 + E4B 3.66)
+ *  3. adb push 路径稳定:`adb push <file> /sdcard/Android/data/com.lumiread/files/`
  *
  * 三种安装方式(全部落到同一目录,App 不区分):
- * - **adb push**(评委/开发):命令行直推到 [targetDir]
- * - **HF 跳转 + SAF 导入**(普通用户):浏览器接受 Gemma 许可 → 下载到手机 → 用 [importFromUri] 拷贝
- * - 未来 `EXTERNAL_DOWNLOAD`(自建托管 URL,当前未实现)留接口位
+ *  - **adb push**(评委/开发):命令行直推到 [targetDir]
+ *  - **HF 跳转 + SAF 导入**(普通用户):浏览器接受 Gemma 许可 → 下载到手机 → 用 [importFromUri] 拷贝
+ *  - 未来 `EXTERNAL_DOWNLOAD`(自建托管 URL,目前 ASSUMPTIONS#A8 未关闭)留接口位
  */
 object ModelProvider {
     private const val TAG = "ModelProvider"
@@ -39,8 +39,8 @@ object ModelProvider {
      * 返回指定模型文件的绝对路径,或失败原因。
      *
      * 失败分两种,UI 文案不同:
-     * - [ModelMissingException]:文件不存在 → 引导用户去 HF 下载或 adb push
-     * - [ModelCorruptedException]:文件大小异常 → 引导用户重传(可能传输中断)
+     *  - [ModelMissingException]:文件不存在 → 引导用户去 HF 下载或 adb push
+     *  - [ModelCorruptedException]:文件大小异常 → 引导用户重传(可能传输中断)
      */
     fun locate(context: Context, model: GemmaModel): Result<String> {
         val dir = runCatching { targetDir(context) }.getOrElse { return Result.failure(it) }

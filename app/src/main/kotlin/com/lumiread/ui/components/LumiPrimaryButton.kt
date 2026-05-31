@@ -15,11 +15,11 @@ import androidx.compose.ui.unit.dp
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 填充式主按钮(part of the UI overhaul)。
+ * 填充式主按钮(UI 改造任务书 §5.2 / §5.4,2026-05-25 步骤五)。
  *
  * 在双模式下统一行动按钮的外观与反馈:
- * - **家长模式**:tokens 对齐 M3 light primary,视觉与原生 `Button(...)` 等价;无回弹
- * - **儿童模式**:行动金 + Ink 文字 + 22dp 圆角 + 0.92 按下回弹 + 触感反馈
+ *  - **家长模式**:tokens 对齐 M3 light primary,视觉与原生 `Button(...)` 等价;无回弹
+ *  - **儿童模式**:行动金 + Ink 文字 + 22dp 圆角 + 0.92 按下回弹 + 触感反馈
  *
  * 颜色 / 圆角 / 触控高度 / 字号 / 回弹深度全部从 [LocalLumiTokens] 派生(§10 红线:
  * 禁止硬编码视觉数值)。

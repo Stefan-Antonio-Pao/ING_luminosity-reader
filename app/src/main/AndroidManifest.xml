@@ -17,10 +17,10 @@
         android:supportsRtl="true">
 
         <!--
-            Per-app locale support: AppCompat 1.6+ on Android 12 and below requires
-            this stub Service to hold the autoStoreLocales metadata.
-            android:enabled="false" means it is never instantiated; only the meta-data is read.
-            Reference: https://developer.android.com/guide/topics/resources/app-languages#androidx-impl
+            v1.1 步骤二:AppCompat 1.6+ 在 Android 12 及以下回填 per-app locale 时,
+            需要这个 stub Service 持有 autoStoreLocales metadata。
+            android:enabled="false" 永不实例化,只读 meta-data。
+            参考 https://developer.android.com/guide/topics/resources/app-languages#androidx-impl
         -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

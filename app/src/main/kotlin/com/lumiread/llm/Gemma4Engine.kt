@@ -8,12 +8,15 @@ import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.ToolProvider
 import com.lumiread.core.GemmaModel
 import com.lumiread.core.ImageInput
 import com.lumiread.core.llm.Conversation
 import com.lumiread.core.llm.LlmEngine
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -22,28 +25,36 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import com.google.ai.edge.litertlm.Conversation as LiteRtConversation
 
 /**
- * LiteRT-LM 0.12.0 上的 Gemma 4 推理引擎。
+ * LiteRT-LM 0.12.0 上的 Gemma 4 推理引擎(CLAUDE.md §5 Phase 3 + v1.1 双模型重构)。
  *
- * 签名来源:LiteRT-LM 0.12.0 AAR(javap -p classes.jar 反汇编核对),2026-05-25。
+ * 签名来源:`docs/spikes/litertlm_NOTE.md` §2,核对自 javap 解包 0.12.0 AAR 字节码,2026-05-24。
+ * 见 FACTS#F2.2(🟢 VERIFIED)、F2.5(visionBackend 用法 🟢 VERIFIED 2026-05-25)、
+ * F1.E4B(E4B 模型事实 🟢 VERIFIED 2026-05-25)。
  *
  * 关键事实(直接决定本类的形状):
- * - `Engine.initialize` 同步 void,可达 ~10 s(OpenCL kernel 编译)→ 必须 `Dispatchers.IO`
- * - `sendMessageAsync(String): Flow<Message>`,本类负责抽取 `Content.Text` 串成 `Flow<String>`
- * - 默认 GPU 后端,初始化失败回退 CPU
- * - `Engine` 是 AutoCloseable,App 进程内全局单例;`Conversation` 一次伴读一个,完后 close
+ *  - `Engine.initialize()` 同步 void,可达 ~10 s(OpenCL kernel 编译)→ 必须 `Dispatchers.IO`
+ *  - `sendMessageAsync(String): Flow<Message>`,本类负责抽取 `Content.Text` 串成 `Flow<String>`
+ *  - 默认 GPU 后端,初始化失败回退 CPU(见 ASSUMPTIONS#A4)
+ *  - `Engine` 是 AutoCloseable,App 进程内全局单例;`Conversation` 一次伴读一个,完后 close
  *
  * **v1.1(2026-05-25)双模型重构**:
- * - 持 [currentModel] 状态(从 SettingsRepository 注入)
- * - `EngineConfig.visionBackend = if (currentModel.supportsMultimodal) backend else null`
- * → 修复 E2B + 多模态时 native null deref 崩溃
- * - [setActiveModel] 切换模型:close 旧 engine + 重置状态,下次 [warmUp] 用新模型初始化
+ *  - 持 [currentModel] 状态(从 SettingsRepository 注入)
+ *  - `EngineConfig.visionBackend = if (currentModel.supportsMultimodal) backend else null`
+ *    → 修复 crash.txt:E2B + 多模态 → null deref(F2.5)
+ *  - [setActiveModel] 切换模型:close 旧 engine + 重置状态,下次 [warmUp] 用新模型初始化
  *
  * 故意不实现的:
- * - cancellation( 接 `cancelProcess`)
- * - SamplerConfig 调温( 调优时再开)
+ *  - cancellation(Phase 6 接 `cancelProcess()`)
+ *  - SamplerConfig 调温(Phase 6 调优时再开)
+ *
+ * **v2.0.0(2026-05-31)EngineProvider 角色**:本类即任务书 §2 架构图中的 `EngineProvider`——
+ * 持有 LiteRT-LM `Engine` 单例、E2B/E4B 切换([setActiveModel])、GPU→CPU 初始化降级([tryInitialize])、
+ * warm-up([warmUp])。Step 2 新增**隐藏 warm-up 生成**([runHiddenWarmUpGeneration],§5)吸收 GPU 首调毛刺。
+ * Step 3-4 的 `FunctionCallingEngine` 将复用本类提供的 `Engine` 来创建带工具的会话(届时再扩展接口)。
  */
 class Gemma4Engine(private val context: Context) : LlmEngine {
 
@@ -72,7 +83,7 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
      */
     @Volatile private var currentModel: GemmaModel = GemmaModel.E2B
 
-    /** 集成冒烟测试 Log 报告用。 */
+    /** 检查点 ① 报告用。Phase 4 把这个数据点写进 PROGRESS.md。 */
     fun activeBackendName(): String = activeBackend
 
     fun activeModel(): GemmaModel = currentModel
@@ -100,6 +111,7 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
 
     override suspend fun warmUp() = withContext(Dispatchers.IO) {
         if (engine?.isInitialized() == true) return@withContext
+        var didInit = false
         initMutex.withLock {
             // double-checked locking:进 lock 后再看一次,避免并发 warmUp 重复 init
             if (engine?.isInitialized() == true) return@withLock
@@ -114,12 +126,48 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
                 ?: error("Gemma4Engine 初始化失败:GPU 与 CPU 后端都不可用(model=$model)")
 
             Log.i(TAG, "Gemma4Engine 初始化完成,model=$model,后端=$activeBackend,耗时=${System.currentTimeMillis() - t0}ms")
+            didInit = true
+        }
+        // v2.0.0 Step 2:隐藏 warm-up 生成(任务书 §5 / RESEARCH_FC #2202 workaround)。
+        // 仅在本次真正完成 init 后跑一次,放在 initMutex 之外(不阻塞别的 warmUp 双检返回)。
+        if (didInit) runHiddenWarmUpGeneration()
+    }
+
+    /**
+     * v2.0.0 Step 2:模型加载后做一次"抛弃式"生成,**吸收 GPU 首调毛刺**(OpenCL kernel 首次编译、
+     * Mali 首调精度问题 —— RESEARCH_FC.md §2 / 字段报告 #2202 的推荐 workaround)。
+     *
+     * 纪律(本函数绝不能拖垮启动 / 不能崩 / 不能挂死):
+     *  - best-effort:任何异常都吞掉(只记日志),失败不影响首轮真实对话;
+     *  - `withTimeoutOrNull` 看门狗:即使 native 挂起也最多占用 [WARMUP_GEN_TIMEOUT_MS] 就放手;
+     *  - 用 `.use` 让这条 warm-up Conversation 立刻 close;`finally` 记 [lastConvCloseAtMs],
+     *    让随后的首条真实 `startConversation` 仍走 200ms quiescence(多轮崩溃修复一致性)。
+     *  - cancellation 透传(CLAUDE.md §C2)。
+     *
+     * 提示词刻意极短且语言中立("Hi"):只为触发一次解码、编译 GPU kernel,不关心内容。
+     */
+    private suspend fun runHiddenWarmUpGeneration() {
+        val e = engine ?: return
+        val t0 = System.currentTimeMillis()
+        try {
+            e.createConversation().use { conv ->
+                withTimeoutOrNull(WARMUP_GEN_TIMEOUT_MS) {
+                    conv.sendMessageAsync(WARMUP_PROMPT).collect { /* 丢弃输出,只为预热 */ }
+                }
+            }
+            Log.i(TAG, "隐藏 warm-up 生成完成,后端=$activeBackend,耗时=${System.currentTimeMillis() - t0}ms")
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (t: Throwable) {
+            Log.w(TAG, "隐藏 warm-up 生成失败(忽略,不影响首轮真实对话)", t)
+        } finally {
+            lastConvCloseAtMs.set(System.currentTimeMillis())
         }
     }
 
     /**
      * 用单一后端尝试 init。多模态模型 ([GemmaModel.supportsMultimodal] = true)同步配置
-     * `visionBackend = backend`( 官方多模态示例);否则 null(纯文本模型,E2B)。
+     * `visionBackend = backend`(FACTS#F2.5 官方多模态示例);否则 null(纯文本模型,E2B)。
      *
      * `audioBackend` 暂时全部置 null —— 本期不接入音频路径。
      */
@@ -152,7 +200,7 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
     override fun generate(prompt: String): Flow<String> = flow {
         warmUp()
         val e = engine ?: error("Gemma4Engine 未初始化")
-        // 每次 generate 用一个新 Conversation,避免历史累计撑爆 ctx-window(:实测 2048)。
+        // 每次 generate 用一个新 Conversation,避免历史累计撑爆 ctx-window(FACTS#F1:实测 2048)。
         // 系统提示已经由 SocraticPromptBuilder 拼进 prompt 文本,这里不传 ConversationConfig.systemInstruction。
         e.createConversation().use { conv ->
             conv.sendMessageAsync(prompt).collect { msg ->
@@ -169,9 +217,9 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
             warmUp()
             val e = engine ?: error("Gemma4Engine 未初始化")
             // 2026-05-24 多轮崩溃修复:
-            // 1) 用 convMutex 串行化 createConversation —— 防 native 层 create/destroy 重叠
-            // 2) 与上一条 Conversation.close 之间至少留 MIN_CONV_QUIESCENCE_MS 空隙,
-            // 给 liblitertlm_jni.so 时间收完前一条 session 句柄。
+            //  1) 用 convMutex 串行化 createConversation —— 防 native 层 create/destroy 重叠
+            //  2) 与上一条 Conversation.close() 之间至少留 MIN_CONV_QUIESCENCE_MS 空隙,
+            //     给 liblitertlm_jni.so 时间收完前一条 session 句柄。
             convMutex.withLock {
                 val lastClose = lastConvCloseAtMs.get()
                 if (lastClose != 0L) {
@@ -183,6 +231,36 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
                 Gemma4Conversation(e.createConversation(cfg), lastConvCloseAtMs)
             }
         }
+
+    /**
+     * v2.0.0 Step 4:创建一条**带工具的手动模式会话**(FACTS#F2.6),供 [FunctionCallingEngine] 跑
+     * agent 循环。手动模式(`automaticToolCalling = false`)下库不自动执行工具——由 FC 引擎取
+     * `Message.toolCalls`、自行 dispatch、再用 `Content.ToolResponse` 回灌。
+     *
+     * **复用多轮崩溃修复**:与 [startConversation] 同走 [convMutex] 串行 + 200ms quiescence;返回的
+     * [Gemma4ToolConversation] 在 close() 时记 [lastConvCloseAtMs],与流式路径共享同一套句柄保护。
+     * 调用方务必 `.use { }` 确保 close。
+     */
+    suspend fun createToolConversation(
+        systemPrompt: String,
+        tools: List<ToolProvider>,
+    ): Gemma4ToolConversation = withContext(Dispatchers.IO) {
+        warmUp()
+        val e = engine ?: error("Gemma4Engine 未初始化")
+        convMutex.withLock {
+            val lastClose = lastConvCloseAtMs.get()
+            if (lastClose != 0L) {
+                val wait = MIN_CONV_QUIESCENCE_MS - (System.currentTimeMillis() - lastClose)
+                if (wait > 0) delay(wait)
+            }
+            val cfg = ConversationConfig(
+                systemInstruction = Contents.of(systemPrompt),
+                tools = tools,
+                automaticToolCalling = false,
+            )
+            Gemma4ToolConversation(e.createConversation(cfg), lastConvCloseAtMs)
+        }
+    }
 
     override suspend fun close() = withContext(Dispatchers.IO) {
         initMutex.withLock {
@@ -196,10 +274,16 @@ class Gemma4Engine(private val context: Context) : LlmEngine {
         private const val TAG = "Gemma4Engine"
 
         /**
-         * 上一条 Conversation.close 与下一条 createConversation 之间的最小空隙。
+         * 上一条 Conversation.close() 与下一条 createConversation() 之间的最小空隙。
          * 200 ms 是个工程经验值:足够让 native 句柄析构/资源回收完成,又不会让用户感知到额外延迟。
          */
         private const val MIN_CONV_QUIESCENCE_MS = 200L
+
+        /** 隐藏 warm-up 生成的提示词:极短、语言中立,只为触发一次解码编译 GPU kernel。 */
+        private const val WARMUP_PROMPT = "Hi"
+
+        /** 隐藏 warm-up 生成看门狗上限:即使 native 挂起也最多占用这么久就放手(best-effort)。 */
+        private const val WARMUP_GEN_TIMEOUT_MS = 15_000L
     }
 }
 
@@ -226,12 +310,12 @@ private class Gemma4Conversation(
     }.flowOn(Dispatchers.IO)
 
     /**
-     * 多模态一轮(OcrMode.MULTIMODAL, 2026-05-24 / v1.1 2026-05-25)。
+     * 多模态一轮(OcrMode.MULTIMODAL,Phase 6 2026-05-24 / v1.1 步骤一 2026-05-25)。
      *
-     * 签名核对:javap -p classes.jar(0.12.0 AAR),2026-05-24:
-     * - `Content.ImageFile(String absolutePath)` / `Content.ImageBytes(byte[] bytes)`
-     * - `Contents.Companion.of(Content...)` varargs
-     * - `Conversation.sendMessageAsync(Contents, Map): Flow<Message>`
+     * 签名核对:javap -p classes.jar(0.12.0 AAR),FACTS#F2.4(🟢 VERIFIED 2026-05-24):
+     *  - `Content.ImageFile(String absolutePath)` / `Content.ImageBytes(byte[] bytes)`
+     *  - `Contents.Companion.of(Content...)` varargs
+     *  - `Conversation.sendMessageAsync(Contents, Map): Flow<Message>`
      *
      * **v1.1 修复**:崩溃根因不在这里,在引擎初始化时 `EngineConfig.visionBackend` 未配置。
      * 现在只有 [GemmaModel.supportsMultimodal] = true 的模型(E4B)走得到这里时,引擎的
@@ -267,9 +351,44 @@ private class Gemma4Conversation(
         try {
             conv.close()
         } finally {
-            // 给 Gemma4Engine.startConversation 算 quiescence 用 —— 即使 conv.close 抛错,
+            // 给 Gemma4Engine.startConversation 算 quiescence 用 —— 即使 conv.close() 抛错,
             // 也要记下尝试 close 的时刻,否则下一轮 createConversation 会立刻撞上去。
             lastConvCloseAtMs.set(System.currentTimeMillis())
         }
     }
 }
+
+/**
+ * v2.0.0 Step 4:带工具的**手动模式**会话薄包装(FACTS#F2.6)。
+ *
+ * 只暴露 [FunctionCallingEngine] agent 循环需要的最小面:
+ *  - [send] 同步发消息(String 首轮 / Message 回灌工具结果),返回可能携带 `toolCalls` 的 [Message];
+ *    **手动模式不逐 token 流**——整条 Message(含 toolCalls 或最终文本)一次性返回。
+ *  - [close] 与 [Gemma4Conversation] 一致,在 finally 记 [lastConvCloseAtMs] 保护下一轮 createConversation。
+ *
+ * 不把 LiteRT-LM 的 `Conversation`/`Message` 暴露给 :core —— 本类与 [FunctionCallingEngine] 同在 :app,
+ * 直接用 LiteRT-LM 类型;core 只通过 `SocraticEngine`/`TurnEvent` 接口看到结果。
+ */
+class Gemma4ToolConversation internal constructor(
+    private val conv: LiteRtConversation,
+    private val lastConvCloseAtMs: AtomicLong,
+) : AutoCloseable {
+
+    /** 同步发首轮/用户文本。返回的 Message 可能含 `toolCalls`(待 FC 执行)或最终文本。 */
+    fun send(text: String): Message = conv.send(text)
+
+    /** 同步回灌工具结果消息(`Message.tool(...)`),拿模型的下一步(再调工具 / 最终文本)。 */
+    fun send(message: Message): Message = conv.send(message)
+
+    override fun close() {
+        try {
+            conv.close()
+        } finally {
+            lastConvCloseAtMs.set(System.currentTimeMillis())
+        }
+    }
+}
+
+/** 内部:同步 sendMessage 的便捷封装(Map 默认参数靠 $default 省略,FACTS#F2.6)。 */
+private fun LiteRtConversation.send(text: String): Message = sendMessage(text)
+private fun LiteRtConversation.send(message: Message): Message = sendMessage(message)

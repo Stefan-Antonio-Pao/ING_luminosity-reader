@@ -21,21 +21,21 @@ import com.lumiread.ui.motion.Motion
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 圆胖开关(part of the UI overhaul)。
+ * 圆胖开关(UI 改造任务书 §6.2,2026-05-25 步骤四)。
  *
- * wire up设置页的"自动朗读 / 多模态切换"等布尔开关。
+ * 步骤五接入设置页的"自动朗读 / 多模态切换"等布尔开关。
  *
  * 视觉:
- * - 轨道:宽 72dp,高 = `tokens.cornerMedium × 2`,圆角胶囊(`tokens.cornerMedium`)
- * - 拇指:正圆,直径 = 轨道高 - 8dp(留 4dp 内边距)
- * - 颜色:开 = `tokens.primary`(行动金),关 = `tokens.surfaceBg`(浅底)
+ *  - 轨道:宽 72dp,高 = `tokens.cornerMedium × 2`,圆角胶囊(`tokens.cornerMedium`)
+ *  - 拇指:正圆,直径 = 轨道高 - 8dp(留 4dp 内边距)
+ *  - 颜色:开 = `tokens.primary`(行动金),关 = `tokens.surfaceBg`(浅底)
  *
  * 动效:
- * - 拇指位置走 [Motion.pressSpring] 的 Dp 弹簧,儿童模式自然超调回弹
- * - 颜色 [Motion.pressSpring] 的 Color 弹簧
- * - 按下时 [BouncyButton] 整体缩到 `1 - bounceDepth`(家长 = 不缩)
+ *  - 拇指位置走 [Motion.pressSpring] 的 Dp 弹簧,儿童模式自然超调回弹
+ *  - 颜色 [Motion.pressSpring] 的 Color 弹簧
+ *  - 按下时 [BouncyButton] 整体缩到 `1 - bounceDepth`(家长 = 不缩)
  *
- * 设计纪律:**禁止散落硬编码颜色/尺寸/动画** —— 这里轨道尺寸 72×(2×cornerMedium)
+ * 任务书 §10 红线:**禁止散落硬编码颜色/尺寸/动画** —— 这里轨道尺寸 72×(2×cornerMedium)
  * 是从 token 派生的,改 `cornerMedium` 自动跟着变,无硬编码视觉。
  */
 @Composable

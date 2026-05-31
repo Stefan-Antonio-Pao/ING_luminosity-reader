@@ -94,34 +94,34 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * 三屏:Capture / Chat / Settings(.5 把原 Reading 单轮屏改成多轮聊天屏)。
+ * 三屏:Capture / Chat / Settings(Phase 4.5 把原 Reading 单轮屏改成多轮聊天屏)。
  *
- * .1 增量:
- * - 设置(lang/age)由 [AppGraph.settings] 通过 DataStore 持久化,UI 用 `collectAsState` 订阅
- * - 当前会话由 [AppGraph.chatStore] 序列化到 `filesDir/chat/current.json`,启动自动恢复
- * - 全面屏:Activity 已 `enableEdgeToEdge`,这里用 `statusBarsPadding/.imePadding/.navigationBarsPadding`
- * 把内容压在系统栏内,顶部不再被状态栏盖住
+ * Phase 5.1 增量:
+ *  - 设置(lang/age)由 [AppGraph.settings] 通过 DataStore 持久化,UI 用 `collectAsState` 订阅
+ *  - 当前会话由 [AppGraph.chatStore] 序列化到 `filesDir/chat/current.json`,启动自动恢复
+ *  - 全面屏:Activity 已 `enableEdgeToEdge`,这里用 `statusBarsPadding/.imePadding/.navigationBarsPadding`
+ *    把内容压在系统栏内,顶部不再被状态栏盖住
  *
- * 顶部贴一条醒目的"FAKE MODE"红色水印,防止 demo/评委把桩件
+ * 顶部贴一条醒目的"FAKE MODE"红色水印(CLAUDE.md §C5),防止 demo/评委把桩件
  * 输出误当真实功能。任何 Fake 实现没被替换掉,这条都会一直挂着。
  */
 enum class Screen { CAPTURE, CHAT, SETTINGS, MY_LEARNING }
 
 /**
  * 进相机的意图:
- * - [NEW] = 拍完开启一段新会话(用首批图启动 ChatSession)
- * - [ATTACH] = 拍完把图加进当前会话的"待发送"暂存,与下一条文本一起发出去
+ *  - [NEW]    = 拍完开启一段新会话(用首批图启动 ChatSession)
+ *  - [ATTACH] = 拍完把图加进当前会话的"待发送"暂存,与下一条文本一起发出去
  */
 enum class CaptureIntent { NEW, ATTACH }
 
 /**
- * v1.1:界面语言三态。
+ * v1.1 步骤二:界面语言三态。
  *
- * - [SYSTEM]:走系统语言(`LocaleListCompat.getEmptyLocaleList`)
- * - [ZH] / [EN]:显式钉住,与"输出语言"/"输出模式"完全解耦(设计规范)
+ *  - [SYSTEM]:走系统语言(`LocaleListCompat.getEmptyLocaleList()`)
+ *  - [ZH] / [EN]:显式钉住,与"输出语言"/"输出模式"完全解耦(任务书 §2)
  *
- * 状态实际持久化由 AppCompat 接手:API 33+ 走 `LocaleManager`,API 26-32 由
- * `AppLocalesMetadataHolderService` 元数据控制持久化(见 AndroidManifest)。
+ *  状态实际持久化由 AppCompat 接手:API 33+ 走 `LocaleManager`,API 26-32 由
+ *  `AppLocalesMetadataHolderService` 元数据控制持久化(见 AndroidManifest)。
  */
 enum class AppUiLang { SYSTEM, ZH, EN }
 
@@ -149,7 +149,7 @@ fun LumiReadApp() {
     val lang by AppGraph.settings.langFlow.collectAsState(initial = Lang.EN)
     val age  by AppGraph.settings.ageFlow.collectAsState(initial = AgeBand.PRESCHOOL)
     // 注意:用户的"原始"OcrMode 给设置页回显;真正喂给 ChatSession 的是 effectiveOcrMode
-    // —— 后者在 E2B 时被 SettingsRepository 强制成 OCR,防止 E2B + MULTIMODAL 崩(v1.1)。
+    // —— 后者在 E2B 时被 SettingsRepository 强制成 OCR,防止 E2B + MULTIMODAL 崩(v1.1 §F2.5)。
     val ocrMode by AppGraph.settings.ocrModeFlow.collectAsState(initial = OcrMode.OCR)
     val effectiveOcrMode by AppGraph.settings.effectiveOcrModeFlow.collectAsState(initial = OcrMode.OCR)
     val selectedModel by AppGraph.settings.selectedModelFlow.collectAsState(initial = GemmaModel.E2B)
@@ -162,7 +162,7 @@ fun LumiReadApp() {
     val chat = rememberChatState()
     val scope = rememberCoroutineScope()
 
-    // 庆祝动效计数:递增即触发一轮星星
+    // 庆祝动效计数(步骤六,2026-05-25):递增即触发一轮星星
     // - 拍照"完成 (N)"提交时 +1
     // - 每次 assistant 回应结束(done=true,无 error)时 +1
     // 家长模式下 Celebration 内部检查 decorDensity=0,直接 return,不绘制
@@ -286,7 +286,7 @@ fun LumiReadApp() {
                     },
                     onSend = { text -> chat.sendUserTurn(scope, lang, age, effectiveOcrMode, autoPlayTts, outputMode, text) },
                     onRemovePending = { path -> chat.removePendingImage(path) },
-                    // v1.1:手动播放。AppGraph.tts(SherpaTtsEngine)内部 speakMutex 串行,
+                    // v1.1 步骤三:手动播放。AppGraph.tts(SherpaTtsEngine)内部 speakMutex 串行,
                     // 多次快点不会撞;cancellation 由 onPlay 调用方的 scope 决定。
                     onPlayAssistant = { text -> AppGraph.tts.speak(text, lang, age) },
                 )
@@ -322,7 +322,7 @@ fun LumiReadApp() {
                 )
             }
 
-            // 庆祝层:非交互覆盖,家长模式自动 short-circuit
+            // 庆祝层(步骤六):非交互覆盖,家长模式自动 short-circuit
             Celebration(trigger = celebrationTick)
         }
     }
@@ -353,8 +353,8 @@ private fun FakeModeBanner() {
  * UI 层的一行聊天记录。
  *
  * 用户气泡:本轮文本 + 附带图片路径 + OCR/标签**摘要字符串**(便于序列化到 JSON)。
- * ocrSummary 用 " / " 拼接每行 OCR 文本(截 160 字),labelsSummary 用 ", " 拼接标签名。
- * 持久化时只存摘要,不存原始 OcrResult/Label; 若需要回放原始置信度再说。
+ *   ocrSummary 用 " / " 拼接每行 OCR 文本(截 160 字),labelsSummary 用 ", " 拼接标签名。
+ *   持久化时只存摘要,不存原始 OcrResult/Label;Phase 6 若需要回放原始置信度再说。
  * 助手气泡:增量累积 LLM 流式输出;done=true 表示本轮结束,error 非空表示本轮失败。
  */
 sealed interface ChatRow {
@@ -384,10 +384,10 @@ private fun summarizeLabels(labels: List<Label>): String =
  * Compose 范围内的聊天状态容器。
  *
  * 设计要点:
- * - [messages] / [pendingPaths] 用 SnapshotStateList,UI 自动观察增删
- * - [streaming] / [error] 是 mutableStateOf,UI 自动观察值变化
- * - [session] 故意不是 State:它只在事件回调里读(非 Composable 上下文),不需要触发重组
- * - [mutex] 串行化每轮请求(LiteRT-LM 单会话不可重入,详见 ChatSession 文档)
+ *  - [messages] / [pendingPaths] 用 SnapshotStateList,UI 自动观察增删
+ *  - [streaming] / [error] 是 mutableStateOf,UI 自动观察值变化
+ *  - [session] 故意不是 State:它只在事件回调里读(非 Composable 上下文),不需要触发重组
+ *  - [mutex] 串行化每轮请求(LiteRT-LM 单会话不可重入,详见 ChatSession 文档)
  */
 class ChatState {
     val messages: androidx.compose.runtime.snapshots.SnapshotStateList<ChatRow> = mutableStateListOf()
@@ -399,10 +399,10 @@ class ChatState {
     internal val mutex = Mutex()
 
     /**
-     * 当前"学习记录会话"在 Room 中的行 id。(下半)。
-     * - 首轮 AssistantDone 时,若为 null → 调 [StudyStore.beginSession] 插行并接住 id
-     * - 后续 AssistantDone → 调 [StudyStore.recordTurn] 刷 endedAt 与 turnCount
-     * - 切「↻ 新会话」/ 开新会话 / 直聊起 → 一律置 null,下一轮会重起一条
+     * 当前"学习记录会话"在 Room 中的行 id。Phase 5(下半)。
+     *  - 首轮 AssistantDone 时,若为 null → 调 [StudyStore.beginSession] 插行并接住 id
+     *  - 后续 AssistantDone → 调 [StudyStore.recordTurn] 刷 endedAt 与 turnCount
+     *  - 切「↻ 新会话」/ 开新会话 / 直聊起 → 一律置 null,下一轮会重起一条
      * 不放进 messages 序列化,因为 Room 行本身就是落盘的。
      */
     internal var studySessionId: Long? = null
@@ -444,7 +444,7 @@ private fun ChatState.startNewSession(
     val validPaths = paths.filter { runCatching { File(it).isFile && File(it).length() > 0 }.getOrDefault(false) }
     if (validPaths.isEmpty()) {
         // 文案来自 res/values{,-en}/strings.xml#error_images_cleared;此处用上下文取字符串
-        // 因为该路径不在 Composable 内,无法直接 stringResource。读 AppGraph.appContext 即可。
+        // 因为该路径不在 Composable 内,无法直接 stringResource()。读 AppGraph.appContext 即可。
         error = AppGraph.appContext.getString(R.string.error_images_cleared)
         return
     }
@@ -515,7 +515,7 @@ private fun ChatState.startChatWithoutImages(
  *
  * 若 [session] 为空(冷启动恢复了历史聊天但 LiteRT-LM Conversation 已死),按需重开一段。
  * 注意此时 **LLM 没有过往 KV cache**,只看到这一轮的内容 —— 这是当前阶段可接受的限制,
- * 真正的"会话归档/恢复"留给 。
+ * 真正的"会话归档/恢复"留给 Phase 6。
  */
 private fun ChatState.sendUserTurn(
     scope: CoroutineScope,
@@ -562,8 +562,8 @@ private fun ChatState.sendUserTurn(
  * 收集 ChatSession 发来的 ChatEvent,把流式增量写到对应 messages 行。
  *
  * C1:所有 `messages[idx] as ChatRow.X` 改成 `getOrNull(idx) as? ChatRow.X ?: return@collect`,
- * 避免用户在 streaming 中按「↻ 新会话」清空 messages 后,后到的 Flow 回调撞 ClassCastException
- * / IndexOutOfBoundsException。
+ *      避免用户在 streaming 中按「↻ 新会话」清空 messages 后,后到的 Flow 回调撞 ClassCastException
+ *      / IndexOutOfBoundsException。
  * C2:streaming = false 由调用方在 finally 内统一兜底;本函数内不再显式翻。
  * C8:学习记录写入用 runCatching 包,DB 异常不阻断对话。
  */
@@ -592,7 +592,7 @@ private suspend fun ChatState.runFlow(
                 val text = ev.fullText.ifEmpty { a.text }
                 messages[assistantIdx] = a.copy(text = text, done = true)
 
-                // (下半):学习记录 —— 首轮插行,后续每轮 UPDATE。
+                // Phase 5(下半):学习记录 —— 首轮插行,后续每轮 UPDATE。
                 // 失败分支(Failed)不计入;空文本助手回应仍记一轮(用户花了时间)。
                 val u = messages.getOrNull(userIdx) as? ChatRow.User
                 val summary = listOfNotNull(
@@ -645,9 +645,9 @@ private fun ChatScreen(
     lang: Lang,
     ageBand: AgeBand,
     /**
-     * v1.1:控制助手气泡上播放按钮的文案。
-     * - true → "🔁 再听一遍"(假设刚才自动播过)
-     * - false → "▶ 播放"(本轮没自动播,需要孩子主动点)
+     * v1.1 步骤三:控制助手气泡上播放按钮的文案。
+     *  - true → "🔁 再听一遍"(假设刚才自动播过)
+     *  - false → "▶ 播放"(本轮没自动播,需要孩子主动点)
      * 行为相同(都触发 TTS),只是 label 不同;中途切换设置只影响标签,不影响已发生的播放。
      */
     autoPlayTts: Boolean,
@@ -657,7 +657,7 @@ private fun ChatScreen(
     onSend: (String) -> Unit,
     onRemovePending: (String) -> Unit,
     /**
-     * v1.1:手动播放回调。挂起到 TTS 完成,UI 据此切"播放中"态。
+     * v1.1 步骤三:手动播放回调。挂起到 TTS 完成,UI 据此切"播放中"态。
      * 复用 [AppGraph.tts] 单例(Mutex 串行,内部抢占已有播放)。
      */
     onPlayAssistant: suspend (String) -> Unit,
@@ -855,10 +855,10 @@ private fun UserBubble(row: ChatRow.User) {
 /**
  * 助手气泡。
  *
- * v1.1:本轮回复完成(`row.done && row.error == null && row.text.isNotEmpty`)后,
+ * v1.1 步骤三:本轮回复完成(`row.done && row.error == null && row.text.isNotEmpty()`)后,
  * 末尾追加一个播放按钮:
- * - [autoPlayTts] = true → "🔁 再听一遍"(假设已自动播过,孩子可重播)
- * - [autoPlayTts] = false → "▶ 播放"(没自动播,孩子主动决定何时听)
+ *  - [autoPlayTts] = true → "🔁 再听一遍"(假设已自动播过,孩子可重播)
+ *  - [autoPlayTts] = false → "▶ 播放"(没自动播,孩子主动决定何时听)
  *
  * 点击挂起调 [onPlay],期间按钮置灰显示"朗读中…";完成/取消/异常都解灰。
  * [onPlay] 内部由 SherpaTtsEngine 的 speakMutex 串行,无需在 UI 再加锁。
@@ -1014,23 +1014,23 @@ private fun SettingsScreen(
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
 
-        // ---- 显示模式 section(UI overhaul)----
+        // ---- 显示模式 section(UI 改造步骤二,2026-05-25)----
         // 内部直接读 SettingsRepository.lumiModeFlow,不入侵 SettingsScreen 的现有参数链。
-        // 演示卡是当前唯一读取 LocalLumiTokens 的节点 —— 切换时观察其圆角/字号/色块平滑过渡。
+        // 演示卡是步骤二唯一读取 LocalLumiTokens 的节点 —— 切换时观察其圆角/字号/色块平滑过渡。
         HorizontalDivider()
         Text(stringResource(R.string.settings_section_mode), style = MaterialTheme.typography.titleMedium)
         ModeSwitchSection()
 
-        // ---- 儿童模式守门(UI overhaul补丁,2026-05-25)----
+        // ---- 儿童模式守门(UI 改造步骤八补丁,2026-05-25)----
         // 儿童模式下设置页只保留"显示模式"section(上面那段);完整配置仅家长模式可见。
         // 与家长门(ModeSwitchSection 内部 ParentGateDialog)形成两层防护:
-        // 1) 儿童态根本看不到完整设置项(降低误触面)
-        // 2) 想看到 → 必须先过家长门(防孩子误进)
+        //   1) 儿童态根本看不到完整设置项(降低误触面)
+        //   2) 想看到 → 必须先过家长门(防孩子误进)
         val currentMode by AppGraph.settings.lumiModeFlow.collectAsState(initial = LumiMode.Child)
         if (currentMode == LumiMode.Parent) {
 
-        // ---- 界面语言 section(v1.1)----
-        // 三态(跟随系统/中文/English)与"输出语言"完全独立 —— 设计规范反复强调
+        // ---- 界面语言 section(v1.1 步骤二)----
+        // 三态(跟随系统/中文/English)与"输出语言"完全独立 —— 任务书 §2 反复强调
         HorizontalDivider()
         Text(stringResource(R.string.settings_section_ui_language), style = MaterialTheme.typography.titleMedium)
         UiLanguageSection()
@@ -1086,7 +1086,7 @@ private fun SettingsScreen(
             label = stringResource(R.string.settings_btn_toggle_lang),
         )
 
-        // ---- 输出模式 section(v1.1,2026-05-25)----
+        // ---- 输出模式 section(v1.1 步骤四,2026-05-25)----
         // 与输出语言相邻但独立显示。RadioButton + 提示文字。
         HorizontalDivider()
         Text(stringResource(R.string.settings_section_output_mode), style = MaterialTheme.typography.titleMedium)
@@ -1127,7 +1127,7 @@ private fun SettingsScreen(
             label = stringResource(R.string.settings_btn_cycle_age),
         )
 
-        // OCR 模式切换( + v1.1 联动 selectedModel)
+        // OCR 模式切换(Phase 6 + v1.1 联动 selectedModel)
         // ocrMode 显示的是用户**原始**偏好;effective 由 SettingsRepository 强制(E2B → OCR)
         val multimodalAllowed = selectedModel.supportsMultimodal
         val ocrModeText = stringResource(
@@ -1163,7 +1163,7 @@ private fun SettingsScreen(
             )
         }
 
-        // ---- 朗读 section(v1.1,2026-05-25)----
+        // ---- 朗读 section(v1.1 步骤三,2026-05-25)----
         // 自动/手动开关。与三个语言概念正交,互不影响。
         HorizontalDivider()
         Text(stringResource(R.string.settings_section_tts), style = MaterialTheme.typography.titleMedium)
@@ -1234,7 +1234,7 @@ private fun SettingsScreen(
 }
 
 /**
- * 界面语言三选一(v1.1)。
+ * 界面语言三选一(v1.1 步骤二)。
  *
  * 当前态从 [AppCompatDelegate.getApplicationLocales] 读;切换时同步调
  * [AppCompatDelegate.setApplicationLocales],API 33+ 由 LocaleManager 接,
@@ -1245,14 +1245,14 @@ private fun SettingsScreen(
  */
 @Composable
 private fun UiLanguageSection() {
-    // **2026-05-25 bugfix**:原先直接 `val current = currentAppUiLang`,问题是该函数读
-    // `AppCompatDelegate.getApplicationLocales` 不被 Compose 观察,且:
-    // - 点 SYSTEM 时若系统语言与之前显式钉死的语言一致,AppCompat 不会触发 Activity recreate
-    // → Composable 不重组 → Radio 选中态不更新
-    // - API 33+ `LocaleManager` 写入有微秒级延迟,即时读回可能拿到旧值
+    // **2026-05-25 bugfix**:原先直接 `val current = currentAppUiLang()`,问题是该函数读
+    // `AppCompatDelegate.getApplicationLocales()` 不被 Compose 观察,且:
+    //  - 点 SYSTEM 时若系统语言与之前显式钉死的语言一致,AppCompat 不会触发 Activity recreate
+    //    → Composable 不重组 → Radio 选中态不更新
+    //  - API 33+ `LocaleManager` 写入有微秒级延迟,即时读回可能拿到旧值
     // 修法:本地 `mutableStateOf` 做即时回显真源,初值从 AppCompat 读;点击时:
-    // 1) 先更新本地 state(Radio 立刻翻)
-    // 2) 再调 AppCompat 持久化(可能触发 recreate,新组合重新 init 本地 state)
+    //   1) 先更新本地 state(Radio 立刻翻)
+    //   2) 再调 AppCompat 持久化(可能触发 recreate,新组合重新 init 本地 state)
     var current by remember { mutableStateOf(currentAppUiLang()) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AppUiLang.entries.forEach { option ->
@@ -1286,10 +1286,10 @@ private fun UiLanguageSection() {
  * 单个模型卡片(设置页 v1.1)。
  *
  * 显示模型名 + 状态徽章(已安装 / 未安装),提供 4 个动作:
- * - 选中(Radio):仅当已安装且非当前时可点
- * - 打开 HF 下载页:浏览器 Intent
- * - 导入已下载文件:SAF
- * - 删除:已安装 + 非当前选中(当前选中不允许删,防止把脚下踩没)
+ *  - 选中(Radio):仅当已安装且非当前时可点
+ *  - 打开 HF 下载页:浏览器 Intent
+ *  - 导入已下载文件:SAF
+ *  - 删除:已安装 + 非当前选中(当前选中不允许删,防止把脚下踩没)
  */
 @Composable
 private fun ModelCard(

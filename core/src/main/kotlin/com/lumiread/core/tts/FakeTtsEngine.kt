@@ -7,7 +7,7 @@ import kotlinx.coroutines.delay
 /**
  * 假 TTS:把"播报"打到回调里,不发声。
  *
- * **运行时水印**:每次"播报"前打 [FAKE_PREFIX]。
+ * **运行时水印**(CLAUDE.md §C5):每次"播报"前打 [FAKE_PREFIX]。
  * 真实路径出现 Fake 走 = 立即失败,不许静默降级。
  */
 class FakeTtsEngine(
@@ -25,7 +25,7 @@ class FakeTtsEngine(
             AgeBand.PRESCHOOL     -> text.length * 70L
             AgeBand.PREADOLESCENT -> text.length * 55L
         }
-        // 拆成几段,以便 stop 能中断
+        // 拆成几段,以便 stop() 能中断
         val step = 100L
         var elapsed = 0L
         while (elapsed < durationMs && !stopped) {

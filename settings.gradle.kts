@@ -24,3 +24,4 @@ rootProject.name = "LumiRead"
 
 include(":app")
 include(":core")
+include(":spike")

@@ -6,8 +6,8 @@ import com.lumiread.core.OcrLine
 import com.lumiread.core.OcrResult
 
 /**
- * 假 OCR:返回一段固定的"绘本文字",用于 跑通 UI。
- * **运行时水印**:返回结果第一行带 [FAKE LINE] 前缀。
+ * 假 OCR:返回一段固定的"绘本文字",用于 Phase 1 跑通 UI。
+ * **运行时水印**(CLAUDE.md §C5):返回结果第一行带 [FAKE LINE] 前缀。
  */
 class FakeOcrService(
     private val cannedText: String = "[FAKE LINE] The puppy plays in the sunny park.",

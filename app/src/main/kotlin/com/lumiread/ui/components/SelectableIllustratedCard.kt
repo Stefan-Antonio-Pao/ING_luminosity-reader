@@ -18,14 +18,14 @@ import com.lumiread.ui.motion.Motion
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 可选中的图文卡(part of the UI overhaul)。
+ * 可选中的图文卡(UI 改造任务书 §6.2 / §5.4,2026-05-25 步骤四)。
  *
  * 适合"年龄段选择 / 输出语言 / 输出模式"等需要一组互斥选项 + 图示的设置项,
- * wire up设置页时复用。
+ * 步骤五接入设置页时复用。
  *
  * 状态:
- * - **未选中**:背景 = `tokens.surfaceBg`,边框 0dp
- * - **选中**:背景 = `tokens.primary` 18% 半透明覆层,边框 = `tokens.primary` 3dp
+ *  - **未选中**:背景 = `tokens.surfaceBg`,边框 0dp
+ *  - **选中**:背景 = `tokens.primary` 18% 半透明覆层,边框 = `tokens.primary` 3dp
  *
  * 选中态切换走 [Motion.PressSpring] 的 Dp / Color 弹簧,**家长模式因 bounceDepth=0
  * BouncyButton 不缩,但选中态颜色仍然平滑过渡** —— 这是有意为之:选中反馈在两种

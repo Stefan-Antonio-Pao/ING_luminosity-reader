@@ -18,22 +18,22 @@ import com.lumiread.ui.motion.Motion
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 全局**按下回弹**按钮(core UI overhaul component)。
+ * 全局**按下回弹**按钮(UI 改造任务书 §5.4 核心组件,2026-05-25 步骤四)。
  *
  * 行为:
- * - 按下 → `scale = 1 - tokens.bounceDepth`(儿童 0.92,家长 1 即不缩)
- * - 松手 → 经 [Motion.PressSpring] 弹簧回弹超调
- * - 三重反馈(设计规范):视觉缩放 + 触觉反馈,**仅儿童模式**触发
+ *  - 按下 → `scale = 1 - tokens.bounceDepth`(儿童 0.92,家长 1 即不缩)
+ *  - 松手 → 经 [Motion.PressSpring] 弹簧回弹超调
+ *  - 三重反馈(任务书 §5.4):视觉缩放 + 触觉反馈,**仅儿童模式**触发
  *
- * **2026-05-25 bugfix**:原先用 `detectTapGestures + awaitRelease`,在 `verticalScroll`
+ * **2026-05-25 bugfix**:原先用 `detectTapGestures + awaitRelease()`,在 `verticalScroll`
  * 父容器下,手指轻微滑动就被滚动手势竞争抢走 → onTap 不触发 → 点击丢失/感觉很卡。
- * 改成 `Modifier.clickable` + `InteractionSource.collectIsPressedAsState`:
- * - `clickable` 内部走 Compose 标准手势协议,正确把"垂直拖动"让给父滚动,"短按"自己消化
- * - `interactionSource` 监听 press,驱动缩放动画
- * - `LaunchedEffect(pressed)` 触感反馈与 press 状态同步
+ * 改成 `Modifier.clickable` + `InteractionSource.collectIsPressedAsState()`:
+ *  - `clickable` 内部走 Compose 标准手势协议,正确把"垂直拖动"让给父滚动,"短按"自己消化
+ *  - `interactionSource` 监听 press,驱动缩放动画
+ *  - `LaunchedEffect(pressed)` 触感反馈与 press 状态同步
  *
  * 用法:作为其它组件(BigCircleActionButton / SelectableIllustratedCard / ChunkySwitch)的
- * 复合基座。设计纪律(设计规范):scale 数值全部从 `tokens.bounceDepth` 派生。
+ * 复合基座。设计纪律(任务书 §10):scale 数值全部从 `tokens.bounceDepth` 派生。
  */
 @Composable
 fun BouncyButton(

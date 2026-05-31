@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Per-app UI language list for LumiRead.
-  Android 13+ system Settings → "App language" reads this list to populate options.
-  The AppCompat 1.7+ backport reuses the same list on API 26-32.
+  v1.1 步骤二:LumiRead 支持的 UI 语言清单。
+  Android 13+ 系统设置「应用语言」会读这份清单展示选项;
+  AppCompat 1.7+ backport 在 API 26-32 复用同一份清单。
   -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="zh-CN" />

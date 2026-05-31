@@ -14,13 +14,13 @@ import androidx.compose.ui.unit.dp
 import com.lumiread.ui.theme.LocalLumiTokens
 
 /**
- * 通用大圆角卡片(part of the UI overhaul)。
+ * 通用大圆角卡片(UI 改造任务书 §5.3,2026-05-25 步骤四)。
  *
  * 形状 = `tokens.cornerLarge`(儿童 28dp / 家长 12dp);
  * 背景 = `tokens.surfaceBg`(儿童 Cream / 家长白);
  * 默认内边距 16dp(可覆盖)。
  *
- * **不**绘制阴影:设计规范提到卡面"白+柔和阴影",阴影留到正式接入屏幕时,
+ * **不**绘制阴影:任务书 §5.2 提示卡面"白+柔和阴影",阴影留到步骤五正式接入屏幕时,
  * 与各屏布局节奏一并调,避免单组件先做阴影后整屏视觉打架。
  */
 @Composable

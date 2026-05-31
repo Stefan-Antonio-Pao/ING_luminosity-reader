@@ -10,7 +10,7 @@ import kotlin.coroutines.resumeWithException
  *
  * 故意手写而非引入 `kotlinx-coroutines-play-services` —— 实现就 8 行,
  * 一个依赖换不到几行代码不划算(也避开了它跟我们 coroutines 1.9.0 版本对齐的问题)。
- * 等到 接 Room/DataStore 真有大量 Task 时再评估是否引入。
+ * 等到 Phase 5 接 Room/DataStore 真有大量 Task 时再评估是否引入。
  */
 internal suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
     addOnSuccessListener { cont.resume(it) }
