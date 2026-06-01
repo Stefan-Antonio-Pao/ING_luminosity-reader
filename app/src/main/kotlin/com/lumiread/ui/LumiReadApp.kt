@@ -351,8 +351,11 @@ fun LumiReadApp() {
                 dismissButton = {
                     TextButton(onClick = {
                         showOnboarding = false
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GemmaModel.E2B.hfModelPageUrl))
-                        context.startActivity(intent)
+                        runCatching {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GemmaModel.E2B.hfModelPageUrl))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        }
                     }) { Text(stringResource(R.string.onboarding_btn_open_hf)) }
                 },
             )
