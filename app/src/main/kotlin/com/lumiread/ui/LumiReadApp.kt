@@ -161,6 +161,15 @@ fun LumiReadApp() {
     var settingsReturnTo by remember { mutableStateOf(Screen.CAPTURE) }
     val chat = rememberChatState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    // 首次启动引导:无模型时弹出下载引导
+    var showOnboarding by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (ModelProvider.installedModels(context).isEmpty()) {
+            showOnboarding = true
+        }
+    }
 
     // 庆祝动效计数(步骤六,2026-05-25):递增即触发一轮星星
     // - 拍照"完成 (N)"提交时 +1
@@ -324,6 +333,29 @@ fun LumiReadApp() {
 
             // 庆祝层(步骤六):非交互覆盖,家长模式自动 short-circuit
             Celebration(trigger = celebrationTick)
+        }
+
+        // 首次启动引导:无模型时弹出下载引导弹窗
+        if (showOnboarding) {
+            AlertDialog(
+                onDismissRequest = { showOnboarding = false },
+                title = { Text(stringResource(R.string.onboarding_title)) },
+                text = { Text(stringResource(R.string.onboarding_body)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showOnboarding = false
+                        settingsReturnTo = screen
+                        screen = Screen.SETTINGS
+                    }) { Text(stringResource(R.string.onboarding_btn_settings)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showOnboarding = false
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GemmaModel.E2B.hfModelPageUrl))
+                        context.startActivity(intent)
+                    }) { Text(stringResource(R.string.onboarding_btn_open_hf)) }
+                },
+            )
         }
     }
 }
