@@ -283,4 +283,10 @@
     <string name="lr_err_model_b">Download the offline model in Settings to continue.</string>
     <string name="lr_err_model_a">Open Settings</string>
     <string name="lr_err_home">Home</string>
+
+    <!-- Onboarding dialog (merged from PR #1) -->
+    <string name="onboarding_title">Welcome to LumiRead ✨</string>
+    <string name="onboarding_body">You\'ll need to install the Gemma 4 model (~2.6 GB) to get started. All AI features run offline on-device.\n\nTap the button below to download the model from Hugging Face, then import it in Settings.</string>
+    <string name="onboarding_btn_open_hf">Download from HF</string>
+    <string name="onboarding_btn_settings">Go to Settings</string>
 </resources>

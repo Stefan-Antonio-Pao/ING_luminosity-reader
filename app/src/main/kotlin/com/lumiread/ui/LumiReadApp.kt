@@ -1,5 +1,7 @@
 package com.lumiread.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -7,7 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,6 +25,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +42,7 @@ import com.lumiread.core.OcrResult
 import com.lumiread.core.OutputMode
 import com.lumiread.core.pipeline.ChatEvent
 import com.lumiread.core.pipeline.ChatSession
+import com.lumiread.llm.ModelProvider
 import com.lumiread.ui.screens.CelebrateScreen
 import com.lumiread.ui.screens.DialogScreen
 import com.lumiread.ui.screens.KidsHomeScreen
@@ -98,8 +104,15 @@ fun LumiReadApp() {
 
     val chat = rememberChatState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     // 相机来源:从 KIDS_HOME(绘本)还是 STORY(物品)进入,决定取消时返回哪屏。
     var cameraOrigin by remember { mutableStateOf(Screen.KIDS_HOME) }
+
+    // 首次启动引导(并入 PR #1 onboarding):无模型时弹下载引导。
+    var showOnboarding by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (ModelProvider.installedModels(context).isEmpty()) showOnboarding = true
+    }
 
     // 主题 mode 跟随区域:家长屏 → Parent 调色板,其余 → Kids。
     val inParent = screen == Screen.PARENT_HOME || screen == Screen.PARENT_SETTINGS || screen == Screen.PRIVACY
@@ -217,6 +230,33 @@ fun LumiReadApp() {
                     onBack = { screen = Screen.PARENT_HOME },
                 )
                 Screen.PRIVACY -> PrivacyScreen(onBack = { screen = Screen.PARENT_SETTINGS })
+            }
+
+            // 首次启动引导弹窗(无模型时):去 HF 下载 / 去设置导入。首启 onboarding 直达设置
+            // (此时还没有模型可保护,无需经家长门)。
+            if (showOnboarding) {
+                AlertDialog(
+                    onDismissRequest = { showOnboarding = false },
+                    title = { Text(stringResource(R.string.onboarding_title)) },
+                    text = { Text(stringResource(R.string.onboarding_body)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showOnboarding = false
+                            screen = Screen.PARENT_SETTINGS
+                        }) { Text(stringResource(R.string.onboarding_btn_settings)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showOnboarding = false
+                            runCatching {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, Uri.parse(GemmaModel.E2B.hfModelPageUrl))
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                            }
+                        }) { Text(stringResource(R.string.onboarding_btn_open_hf)) }
+                    },
+                )
             }
         }
     }

@@ -297,4 +297,10 @@
     <string name="lr_err_model_b">到设置里下载离线模型后就能继续了。</string>
     <string name="lr_err_model_a">去设置</string>
     <string name="lr_err_home">回首页</string>
+
+    <!-- Onboarding dialog (merged from PR #1) -->
+    <string name="onboarding_title">欢迎使用 LumiRead ✨</string>
+    <string name="onboarding_body">首次使用需安装 Gemma 4 模型（约 2.6 GB），所有 AI 功能在本机离线运行。\n\n请点击下方按钮跳转 Hugging Face 下载模型文件，下载完成后前往设置页导入即可使用。</string>
+    <string name="onboarding_btn_open_hf">去 HF 下载</string>
+    <string name="onboarding_btn_settings">去设置导入</string>
 </resources>
