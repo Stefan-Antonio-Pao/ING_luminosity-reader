@@ -10,18 +10,19 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -34,19 +35,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.lumiread.R
-import com.lumiread.ui.components.AppBackground
-import com.lumiread.ui.components.LumiOutlinedButton
-import com.lumiread.ui.components.LumiPrimaryButton
+import com.lumiread.ui.components.CaptureHint
+import com.lumiread.ui.components.ErrorCard
+import com.lumiread.ui.components.LumiCaptureButton
+import com.lumiread.ui.components.LumiIconButton
+import com.lumiread.ui.components.LumiScreenBackground
+import com.lumiread.ui.components.PromptChip
+import com.lumiread.ui.screens.tierRes
+import com.lumiread.ui.theme.LocalTier
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
@@ -54,29 +59,23 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * CameraX 多张拍照取景屏(FACTS#F5)。
+ * CameraX 拍照取景屏 —— v3.0.0 取景器(components.md#camera-viewfinder)。
  *
- * - 用 [LifecycleCameraController] + [PreviewView] 包进 Compose 的 [AndroidView]。
- * - 模式 = `CAPTURE_MODE_MAXIMIZE_QUALITY`,绘本是静态近景 → 单次 `takePicture`。
- * - **拍后手动裁切**:每张拍完进入 [CropConfirmScreen],用户拖矩形选区确认才入批。
- * - **多张支持**:一批裁好的路径累计在 `capturedPaths`,点"完成 (N)"一次性交给 Pipeline。
- * - 拍完写到 `context.cacheDir`,裁切后再写一份 `crop-*.jpg`,原图删除。
- * - 权限走 `ActivityResultContracts.RequestPermission()`。
+ * 视觉:黑底 + 四角金色取景框 + 顶部半透明提示胶囊 + 底部 88/96dp 暖金大快门 + 反白图标按钮。
+ * 逻辑保持不变:[LifecycleCameraController] + `CAPTURE_MODE_MAXIMIZE_QUALITY` 单拍;
+ * 每张拍完进 [CropConfirmScreen] 手动裁切;一批裁好的路径累计,"完成 (N)" 一次交给链路。
  */
 @Composable
 fun CameraCaptureScreen(
     onCaptured: (paths: List<String>) -> Unit,
     onOpenSettings: () -> Unit,
     onCancel: () -> Unit,
-    /**
-     * 可选:"💬 直接开始对话"按钮的回调。非空时,在首张照片拍出来之前显示在拍照按钮旁边。
-     * 用于"无绘本、直接聊"路径(LumiReadApp 在 NEW intent + 空批时传入)。
-     */
-    onStartChatDirect: (() -> Unit)? = null,
+    @Suppress("UNUSED_PARAMETER") onStartChatDirect: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    val tier = LocalTier.current
 
     var hasPermission by remember {
         mutableStateOf(
@@ -84,20 +83,28 @@ fun CameraCaptureScreen(
                 == PackageManager.PERMISSION_GRANTED
         )
     }
-
     val permLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted -> hasPermission = granted }
 
-    LaunchedEffect(Unit) {
-        if (!hasPermission) permLauncher.launch(Manifest.permission.CAMERA)
-    }
+    LaunchedEffect(Unit) { if (!hasPermission) permLauncher.launch(Manifest.permission.CAMERA) }
 
     if (!hasPermission) {
-        PermissionRationale(
-            onRetry = { permLauncher.launch(Manifest.permission.CAMERA) },
-            onCancel = onCancel,
-        )
+        // 缺权限:友好说明(先解释为什么需要,再给行动),不报错(accessibility §6)。
+        LumiScreenBackground(decor = false) {
+            Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.Center) {
+                ErrorCard(
+                    iconRes = R.drawable.ic_lumi_camera,
+                    title = stringResource(R.string.lr_err_perm_t),
+                    body = stringResource(R.string.permission_camera_body),
+                    actionLabel = stringResource(R.string.btn_grant_permission),
+                    onAction = { permLauncher.launch(Manifest.permission.CAMERA) },
+                    homeLabel = stringResource(R.string.lr_err_home),
+                    onHome = onCancel,
+                    soft = true,
+                )
+            }
+        }
         return
     }
 
@@ -107,17 +114,14 @@ fun CameraCaptureScreen(
             imageCaptureMode = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
         }
     }
-
     DisposableEffect(lifecycleOwner) {
         controller.bindToLifecycle(lifecycleOwner)
         onDispose { controller.unbind() }
     }
 
-    // 多张:累计本批已确认裁切的路径
     val capturedPaths = remember { mutableStateListOf<String>() }
     var capturing by remember { mutableStateOf(false) }
     var lastError by remember { mutableStateOf<String?>(null) }
-    // 拍完但还没确认裁切的原图;非空时显示裁切页,空时显示相机预览
     var pendingCropPath by remember { mutableStateOf<String?>(null) }
 
     val pending = pendingCropPath
@@ -137,132 +141,103 @@ fun CameraCaptureScreen(
         return
     }
 
-    AppBackground {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { ctx ->
-                        PreviewView(ctx).also { it.controller = controller }
-                    },
-                )
-                // 左上返回:半透明圆形浮层,适合任意相机画面;走 onCancel ——
-                // 有进行中会话回 CHAT,否则在 LumiReadApp 里 fall back 到 Activity.finish()
+    Box(Modifier.fillMaxSize().background(com.lumiread.ui.theme.LumiColors.CameraDark)) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx -> PreviewView(ctx).also { it.controller = controller } },
+        )
+
+        // 四角金色取景框(居中方形)
+        Image(
+            painter = painterResource(R.drawable.illu_camera_corners),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.84f)
+                .aspectRatio(1f),
+        )
+
+        // 顶部:取消(反白)+ 提示胶囊
+        Box(
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(12.dp),
+        ) {
+            LumiIconButton(
+                resId = R.drawable.ic_lumi_close,
+                contentDescription = stringResource(R.string.lr_camera_cancel_cd),
+                onClick = onCancel,
+                onDark = true,
+                modifier = Modifier.align(Alignment.TopStart),
+            )
+            CaptureHint(
+                text = stringResource(tierRes(tier, R.string.lr_camera_hint_toddler, R.string.lr_camera_hint_preschool, R.string.lr_camera_hint_pre)),
+                modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 56.dp),
+            )
+        }
+
+        // 底部:设置 / 大快门 / 完成(N)
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (capturedPaths.isNotEmpty()) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(12.dp)
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .clickable(onClick = onCancel),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("←", color = Color.White, fontSize = 24.sp)
-                }
+                        .background(Color.Black.copy(alpha = 0.45f), androidx.compose.foundation.shape.RoundedCornerShape(999.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                ) { Text(stringResource(R.string.lr_camera_status, capturedPaths.size), color = Color.White) }
             }
-
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            lastError?.let {
+                Text(stringResource(R.string.capture_failed, it), color = com.lumiread.ui.theme.LumiColors.Gold300)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(
-                    stringResource(R.string.capture_status_hint, capturedPaths.size),
-                    style = MaterialTheme.typography.bodyMedium,
+                LumiIconButton(
+                    resId = R.drawable.ic_lumi_settings,
+                    contentDescription = stringResource(R.string.lr_camera_settings_cd),
+                    onClick = onOpenSettings,
+                    onDark = true,
                 )
-                lastError?.let {
-                    Text(stringResource(R.string.capture_failed, it), color = MaterialTheme.colorScheme.error)
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    LumiPrimaryButton(
-                        modifier = Modifier.weight(1f),
-                        enabled = !capturing,
-                        label = stringResource(if (capturing) R.string.capture_in_progress else R.string.btn_capture_another),
-                        onClick = {
-                            capturing = true
-                            lastError = null
-                            scope.launch {
-                                runCatching { takePictureToCache(context, controller) }
-                                    .onSuccess { rawPath ->
-                                        capturing = false
-                                        pendingCropPath = rawPath
-                                    }
-                                    .onFailure { err ->
-                                        capturing = false
-                                        lastError = err.message ?: err.javaClass.simpleName
-                                    }
-                            }
-                        },
-                    )
-
-                    // 仅在"还没拍过、又允许直接开聊"时显示 —— 一旦拍出第一张,就锁定走拍照流。
-                    if (onStartChatDirect != null && capturedPaths.isEmpty()) {
-                        LumiOutlinedButton(
-                            enabled = !capturing,
-                            onClick = onStartChatDirect,
-                            label = stringResource(R.string.btn_chat_direct),
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    LumiPrimaryButton(
-                        modifier = Modifier.weight(1f),
-                        enabled = capturedPaths.isNotEmpty() && !capturing,
-                        label = stringResource(R.string.btn_done_with_count, capturedPaths.size),
+                LumiCaptureButton(
+                    onClick = {
+                        if (capturing) return@LumiCaptureButton
+                        capturing = true
+                        lastError = null
+                        scope.launch {
+                            runCatching { takePictureToCache(context, controller) }
+                                .onSuccess { capturing = false; pendingCropPath = it }
+                                .onFailure { capturing = false; lastError = it.message ?: it.javaClass.simpleName }
+                        }
+                    },
+                    contentDescription = stringResource(R.string.lr_camera_shutter_cd),
+                    enabled = !capturing,
+                )
+                // 完成(N):有图才显示,否则占位保持快门居中
+                if (capturedPaths.isNotEmpty()) {
+                    PromptChip(
+                        text = stringResource(R.string.lr_camera_done, capturedPaths.size),
                         onClick = {
                             val snapshot = capturedPaths.toList()
                             capturedPaths.clear()
                             onCaptured(snapshot)
                         },
+                        gold = true,
                     )
-
-                    LumiOutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        enabled = capturedPaths.isNotEmpty() && !capturing,
-                        label = stringResource(R.string.btn_clear),
-                        onClick = {
-                            // 顺手删本批的缓存文件,避免无限堆积
-                            capturedPaths.forEach { runCatching { File(it).delete() } }
-                            capturedPaths.clear()
-                        },
-                    )
+                } else {
+                    androidx.compose.foundation.layout.Spacer(Modifier.size(48.dp))
                 }
-
-                LumiOutlinedButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onOpenSettings,
-                    label = stringResource(R.string.btn_settings),
-                )
             }
         }
     }
 }
 
-@Composable
-private fun PermissionRationale(onRetry: () -> Unit, onCancel: () -> Unit) {
-    AppBackground {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(stringResource(R.string.permission_camera_title), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.permission_camera_body))
-            LumiPrimaryButton(onClick = onRetry, label = stringResource(R.string.btn_grant_permission))
-            LumiOutlinedButton(onClick = onCancel, label = stringResource(R.string.btn_back))
-        }
-    }
-}
 
 private suspend fun takePictureToCache(
     context: Context,
@@ -271,17 +246,12 @@ private suspend fun takePictureToCache(
     val outFile = File(context.cacheDir, "capture-${System.currentTimeMillis()}.jpg")
     val options = ImageCapture.OutputFileOptions.Builder(outFile).build()
     val executor = ContextCompat.getMainExecutor(context)
-
     controller.takePicture(
         options,
         executor,
         object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                cont.resume(outFile.absolutePath)
-            }
-            override fun onError(exc: ImageCaptureException) {
-                cont.resumeWithException(exc)
-            }
+            override fun onImageSaved(output: ImageCapture.OutputFileResults) = cont.resume(outFile.absolutePath)
+            override fun onError(exc: ImageCaptureException) = cont.resumeWithException(exc)
         },
     )
 }

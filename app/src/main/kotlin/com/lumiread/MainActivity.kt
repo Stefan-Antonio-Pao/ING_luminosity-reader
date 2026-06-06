@@ -4,16 +4,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import com.lumiread.core.AgeBand
 import com.lumiread.ui.LumiReadApp
-import com.lumiread.ui.theme.LumiMode
-import com.lumiread.ui.theme.LumiTheme
 
 /**
  * App 入口。Phase 3 起:`onCreate` 第一件事调用 [AppGraph.init],把 [Application]
@@ -43,13 +34,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         AppGraph.init(application)
         setContent {
-            val mode by AppGraph.settings.lumiModeFlow.collectAsState(initial = LumiMode.Child)
-            val ageBand by AppGraph.settings.ageFlow.collectAsState(initial = AgeBand.PRESCHOOL)
-            LumiTheme(mode = mode, ageBand = ageBand) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    LumiReadApp()
-                }
-            }
+            // v3.0.0:主题 mode 跟随导航(家长区=Parent 调色板),由 LumiReadApp 内部用 LumiTheme 包裹,
+            // 因此这里不再外套一层 LumiTheme;每个屏自带 LumiScreenBackground 铺底。
+            LumiReadApp()
         }
     }
 }

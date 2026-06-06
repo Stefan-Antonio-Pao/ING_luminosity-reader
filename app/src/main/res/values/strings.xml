@@ -128,4 +128,173 @@
     <string name="my_learning_summary_langs">中文: %1$d  ·  英文: %2$d</string>
     <string name="my_learning_record_meta">%1$s · %2$s · %3$d 轮</string>
     <string name="my_learning_no_image_session">(无图直聊)</string>
+
+    <!-- ===================== v3.0.0 UI redesign ===================== -->
+    <!-- Kids home -->
+    <string name="lr_brand_pill" translatable="false">LUMIREAD v3.0</string>
+    <string name="lr_home_age_toddler">适合 3–5 岁</string>
+    <string name="lr_home_age_preschool">适合 5–8 岁</string>
+    <string name="lr_home_age_pre">适合 8–12 岁</string>
+    <string name="lr_home_title_toddler">把书放进框里</string>
+    <string name="lr_home_title_preschool">我们一起读这一页吧</string>
+    <string name="lr_home_title_pre">翻开你的绘本,开始吧</string>
+    <string name="lr_home_sub_toddler">我们一起看图</string>
+    <string name="lr_home_sub_preschool">把书放进魔法框里,对齐书的边缘</string>
+    <string name="lr_home_sub_pre">把书放进框里,保持光线明亮、字迹清晰</string>
+    <string name="lr_home_cta_toddler">拍一拍</string>
+    <string name="lr_home_cta_preschool">拍这一页</string>
+    <string name="lr_home_cta_pre">拍摄这一页</string>
+    <string name="lr_home_no_book">没有绘本</string>
+    <string name="lr_home_continue">继续上次</string>
+    <string name="lr_home_parent">家长</string>
+
+    <!-- Camera -->
+    <string name="lr_camera_hint_toddler">对准书页</string>
+    <string name="lr_camera_hint_preschool">把书页放进框里,光线要明亮哦</string>
+    <string name="lr_camera_hint_pre">对齐书页边缘</string>
+    <string name="lr_camera_shutter_cd">拍照</string>
+    <string name="lr_camera_cancel_cd">取消</string>
+    <string name="lr_camera_settings_cd">设置</string>
+    <string name="lr_camera_done">完成 (%1$d)</string>
+    <string name="lr_camera_status">已拍 %1$d 张</string>
+
+    <!-- Crop -->
+    <string name="lr_crop_title">框出绘本</string>
+    <string name="lr_crop_select_all">全选</string>
+    <string name="lr_crop_hint_toddler">拖出绘本的位置</string>
+    <string name="lr_crop_hint_preschool">拖动四个角,把绘本框出来</string>
+    <string name="lr_crop_hint_pre">拖动手柄,框出你想读的那一页</string>
+    <string name="lr_crop_back">回去</string>
+    <string name="lr_crop_use">用这块</string>
+    <string name="lr_crop_footer">只有框里的内容会发给 LumiRead 阅读</string>
+    <string name="lr_crop_size">%1$d × %2$d</string>
+
+    <!-- Celebrate -->
+    <string name="lr_celebrate_toddler">拍到啦!</string>
+    <string name="lr_celebrate_preschool">拍得真棒!</string>
+    <string name="lr_celebrate_pre">拍得不错</string>
+    <string name="lr_celebrate_subtitle">正在读这一页…</string>
+
+    <!-- Thinking -->
+    <string name="lr_thinking_toddler">我在看…</string>
+    <string name="lr_thinking_preschool">正在认真看……</string>
+    <string name="lr_thinking_pre">LumiRead 正在阅读这一页…</string>
+    <string name="lr_thinking_privacy">本地阅读中,不会上传任何照片</string>
+
+    <!-- Dialog -->
+    <string name="lr_dialog_title">一起读这一页</string>
+    <string name="lr_dialog_new_page">新一页</string>
+    <string name="lr_dialog_tts_play">朗读</string>
+    <string name="lr_dialog_tts_pause">暂停</string>
+    <string name="lr_dialog_continue_ask">继续问</string>
+    <string name="lr_dialog_ask_toddler">想问什么?</string>
+    <string name="lr_dialog_ask_preschool">想问什么呢?</string>
+    <string name="lr_dialog_ask_pre">想继续聊点什么?</string>
+    <string name="lr_dialog_input_toddler">说点什么…</string>
+    <string name="lr_dialog_input_preschool">自己问一个问题…</string>
+    <string name="lr_dialog_input_pre">想问点什么都可以…</string>
+    <string name="lr_dialog_input_helper">点麦克风可以说话;按发送提交</string>
+    <string name="lr_dialog_send_cd">发送</string>
+    <string name="lr_dialog_mic_cd">语音输入</string>
+    <string name="lr_dialog_retake">再拍一页</string>
+    <string name="lr_dialog_thinking">正在认真想……</string>
+    <string name="lr_mic_unavailable">这台设备暂时不能语音输入,直接打字也可以哦。</string>
+    <string name="lr_tts_unavailable">暂时不能朗读,文字仍然可以读。</string>
+
+    <!-- Story -->
+    <string name="lr_story_title_toddler">今天没书也没关系</string>
+    <string name="lr_story_title_preschool">我们今天编个故事吧</string>
+    <string name="lr_story_title_pre">没有绘本,也能开始一个故事</string>
+    <string name="lr_story_sub_toddler">拍一样东西,或选一个开头。</string>
+    <string name="lr_story_sub_others">拍一样东西、选个开头,或者自己说一个。</string>
+    <string name="lr_story_object_title">拍一样东西</string>
+    <string name="lr_story_object_sub_toddler">这是什么?</string>
+    <string name="lr_story_object_sub_preschool">玩具、水果、植物……都可以</string>
+    <string name="lr_story_object_sub_pre">拍下来一起观察、聊聊它的故事</string>
+    <string name="lr_story_chips_label">LumiRead 给你想了几个开头</string>
+    <string name="lr_story_chips_loading">LumiRead 正在想几个开头…</string>
+    <string name="lr_story_chips_refresh">换一组</string>
+    <string name="lr_story_chips_offline">本地模型在生成 · 完全离线</string>
+    <string name="lr_story_input_label">或者自己说一个开头</string>
+    <string name="lr_story_input_toddler">比如:有一天,小狐狸……</string>
+    <string name="lr_story_input_preschool">比如:有一天,小狐狸……</string>
+    <string name="lr_story_input_pre">写一个开头,或者一个主题…</string>
+    <string name="lr_story_footer">LumiRead 会根据你说的,慢慢编出整个故事。</string>
+    <string name="lr_story_start">开始讲故事</string>
+    <string name="lr_story_fallback_1">有一天,一只小狐狸发现了一扇会发光的门。</string>
+    <string name="lr_story_fallback_2">在一座云朵做成的城堡里,住着爱画画的小熊。</string>
+    <string name="lr_story_fallback_3">月亮悄悄掉进了池塘,小青蛙决定把它送回去。</string>
+    <string name="lr_story_fallback_4">森林里的灯笼花今晚第一次亮了起来。</string>
+    <string name="lr_story_fallback_5">一颗种子说,它梦见自己变成了一棵很高很高的树。</string>
+
+    <!-- Parent gate -->
+    <string name="lr_gate_title">家长进入</string>
+    <string name="lr_gate_body">这是一道小小的离线题。请家长点一下最大的数字。</string>
+    <string name="lr_gate_wrong">再看一下,选最大的。</string>
+    <string name="lr_gate_right">已通过 · 进入家长模式…</string>
+    <string name="lr_gate_privacy">这一步完全在本地完成,不会发送任何数据。</string>
+    <string name="lr_gate_number_cd">数字 %1$d</string>
+
+    <!-- Parent home -->
+    <string name="lr_parent_mode_label">家长模式</string>
+    <string name="lr_parent_title">我的学习</string>
+    <string name="lr_parent_exit">退出家长 →</string>
+    <string name="lr_parent_week_label">本周阅读</string>
+    <string name="lr_parent_week_unit">%1$s 小时 · %2$d 个会话</string>
+    <string name="lr_parent_stat_sessions">阅读会话</string>
+    <string name="lr_parent_stat_questions">互动轮次</string>
+    <string name="lr_parent_stat_lang">主语言</string>
+    <string name="lr_parent_stat_minutes">总时长(分钟)</string>
+    <string name="lr_parent_recent_label">最近阅读</string>
+    <string name="lr_parent_empty">还没开始阅读 —— 去拍一页绘本吧。</string>
+    <string name="lr_parent_privacy_card">所有阅读数据都保存在本设备。LumiRead 不创建账号、不上传图片、不分析家庭行为。</string>
+    <string name="lr_parent_clear">清空阅读记录</string>
+    <string name="lr_tab_learning">我的学习</string>
+    <string name="lr_tab_settings">设置</string>
+
+    <!-- Settings v3 -->
+    <string name="lr_set_section_child">孩子</string>
+    <string name="lr_set_tier_label">阅读年龄段</string>
+    <string name="lr_set_tier_toddler">3–5 岁</string>
+    <string name="lr_set_tier_preschool">5–8 岁</string>
+    <string name="lr_set_tier_pre">8–12 岁</string>
+    <string name="lr_set_out_lang">输出语言</string>
+    <string name="lr_set_bilingual">中英双语输出</string>
+    <string name="lr_set_bilingual_desc">同时给出英文翻译,便于双语学习</string>
+    <string name="lr_set_section_exp">阅读体验</string>
+    <string name="lr_set_auto_tts">自动朗读</string>
+    <string name="lr_set_auto_tts_desc">生成回答后自动开始朗读</string>
+    <string name="lr_set_section_app">应用</string>
+    <string name="lr_set_ui_lang">界面语言</string>
+    <string name="lr_set_privacy">隐私说明</string>
+    <string name="lr_set_privacy_desc">了解 LumiRead 怎么保护孩子的隐私</string>
+    <string name="lr_set_model_section">模型与运行</string>
+    <string name="lr_set_version">版本</string>
+    <string name="lr_set_version_value" translatable="false">LumiRead v3.0.0 · 离线</string>
+
+    <!-- Privacy -->
+    <string name="lr_privacy_title">隐私说明</string>
+    <string name="lr_privacy_hero">为孩子和家庭设计的隐私</string>
+    <string name="lr_privacy_hero_body">LumiRead 不收集账号、不上传照片、不分析家庭行为。一切阅读发生在这一台设备上。</string>
+    <string name="lr_privacy_r1_t">不上传图片</string>
+    <string name="lr_privacy_r1_b">拍下来的绘本页只在手机上识别和理解,不会离开设备。</string>
+    <string name="lr_privacy_r2_t">不创建账号</string>
+    <string name="lr_privacy_r2_b">没有云端用户名、没有密码,也没有家长后台同步。</string>
+    <string name="lr_privacy_r3_t">不依赖网络</string>
+    <string name="lr_privacy_r3_b">模型下载完成后可完全离线使用,可以飞行模式读绘本。</string>
+    <string name="lr_privacy_r4_t">数据可清除</string>
+    <string name="lr_privacy_r4_b">在设置里一键清空所有阅读记录与缓存。</string>
+    <string name="lr_offline_pill">本地运行,无需联网</string>
+
+    <!-- Error cards -->
+    <string name="lr_err_perm_t">需要相机权限</string>
+    <string name="lr_err_perm_b">在系统设置里允许相机后再回到这里。</string>
+    <string name="lr_err_perm_a">去设置</string>
+    <string name="lr_err_ocr_t">没看清这一页</string>
+    <string name="lr_err_ocr_b">可能光线不够,或者字太小了。换个角度再拍一次试试?</string>
+    <string name="lr_err_ocr_a">重新拍</string>
+    <string name="lr_err_model_t">模型还没安装</string>
+    <string name="lr_err_model_b">到设置里下载离线模型后就能继续了。</string>
+    <string name="lr_err_model_a">去设置</string>
+    <string name="lr_err_home">回首页</string>
 </resources>

@@ -12,12 +12,13 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -37,8 +39,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lumiread.R
+import com.lumiread.ui.components.LumiIconButton
+import com.lumiread.ui.components.LumiPrimaryButton
+import com.lumiread.ui.components.LumiSecondaryButton
+import com.lumiread.ui.components.PromptChip
+import com.lumiread.ui.theme.LocalTier
+import com.lumiread.ui.theme.LumiColors
+import com.lumiread.ui.theme.Tier
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.min
@@ -62,6 +72,11 @@ fun CropConfirmScreen(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val tier = LocalTier.current
+    // Toddler 命中区更大(accessibility / Phase 5 要求把手可小但命中区大)
+    val grabScale = if (tier == Tier.TODDLER) 1.8f else 1.25f
+    val handleColor = LumiColors.Gold500
+    val gridColor = Color.White.copy(alpha = 0.35f)
 
     val bitmap = remember(srcPath) { decodeAndOrientForDisplay(srcPath) }
     DisposableEffect(srcPath) {
@@ -95,8 +110,8 @@ fun CropConfirmScreen(
 
             // 命中阈值(图片像素单位):角点 6%、边带 4% 的短边
             val shortEdge = min(bmpW, bmpH)
-            val cornerGrabPx = shortEdge * 0.06f
-            val edgeGrabPx = shortEdge * 0.04f
+            val cornerGrabPx = shortEdge * 0.06f * grabScale
+            val edgeGrabPx = shortEdge * 0.04f * grabScale
             val minCropPx = shortEdge * 0.10f
 
             Image(
@@ -155,69 +170,100 @@ fun CropConfirmScreen(
                     style = Stroke(width = strokeW),
                 )
 
-                // 3) 四角 L 形把手
-                drawCornerHandle(l, t, +1f, +1f, cornerHandleLen, cornerHandleW)
-                drawCornerHandle(r, t, -1f, +1f, cornerHandleLen, cornerHandleW)
-                drawCornerHandle(l, b, +1f, -1f, cornerHandleLen, cornerHandleW)
-                drawCornerHandle(r, b, -1f, -1f, cornerHandleLen, cornerHandleW)
+                // 2.5) 九宫格辅助线(Phase 5)
+                val gridW = with(density) { 1.dp.toPx() }
+                val thirdX1 = l + (r - l) / 3f
+                val thirdX2 = l + (r - l) * 2f / 3f
+                val thirdY1 = t + (b - t) / 3f
+                val thirdY2 = t + (b - t) * 2f / 3f
+                drawLine(gridColor, Offset(thirdX1, t), Offset(thirdX1, b), gridW)
+                drawLine(gridColor, Offset(thirdX2, t), Offset(thirdX2, b), gridW)
+                drawLine(gridColor, Offset(l, thirdY1), Offset(r, thirdY1), gridW)
+                drawLine(gridColor, Offset(l, thirdY2), Offset(r, thirdY2), gridW)
 
-                // 4) 四边中点短杠
+                // 3) 四角 L 形金色把手
+                drawCornerHandle(handleColor, l, t, +1f, +1f, cornerHandleLen, cornerHandleW)
+                drawCornerHandle(handleColor, r, t, -1f, +1f, cornerHandleLen, cornerHandleW)
+                drawCornerHandle(handleColor, l, b, +1f, -1f, cornerHandleLen, cornerHandleW)
+                drawCornerHandle(handleColor, r, b, -1f, -1f, cornerHandleLen, cornerHandleW)
+
+                // 4) 四边中点短杠(金色)
                 val midX = (l + r) / 2f
                 val midY = (t + b) / 2f
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(midX - edgeHandleLen / 2f, t - cornerHandleW / 2f),
-                    size = Size(edgeHandleLen, cornerHandleW),
-                )
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(midX - edgeHandleLen / 2f, b - cornerHandleW / 2f),
-                    size = Size(edgeHandleLen, cornerHandleW),
-                )
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(l - cornerHandleW / 2f, midY - edgeHandleLen / 2f),
-                    size = Size(cornerHandleW, edgeHandleLen),
-                )
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(r - cornerHandleW / 2f, midY - edgeHandleLen / 2f),
-                    size = Size(cornerHandleW, edgeHandleLen),
-                )
+                drawRect(handleColor, Offset(midX - edgeHandleLen / 2f, t - cornerHandleW / 2f), Size(edgeHandleLen, cornerHandleW))
+                drawRect(handleColor, Offset(midX - edgeHandleLen / 2f, b - cornerHandleW / 2f), Size(edgeHandleLen, cornerHandleW))
+                drawRect(handleColor, Offset(l - cornerHandleW / 2f, midY - edgeHandleLen / 2f), Size(cornerHandleW, edgeHandleLen))
+                drawRect(handleColor, Offset(r - cornerHandleW / 2f, midY - edgeHandleLen / 2f), Size(cornerHandleW, edgeHandleLen))
             }
         }
 
-        // 底部按钮条
+        // 顶栏:返回 + 标题 + 全选(把选区恢复为整张图)
         Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LumiIconButton(
+                resId = R.drawable.ic_lumi_back,
+                contentDescription = stringResource(R.string.lr_crop_back),
+                onClick = onRetake,
+                onDark = true,
+            )
+            Text(
+                stringResource(R.string.lr_crop_title),
+                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+            )
+            PromptChip(
+                text = stringResource(R.string.lr_crop_select_all),
+                onClick = { crop = CropRect(0f, 0f, bmpW, bmpH) },
+            )
+        }
+
+        // 底部:实时尺寸 + v3 按钮
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            OutlinedButton(
-                modifier = Modifier.weight(1f),
-                onClick = onRetake,
-            ) { Text(stringResource(R.string.btn_retake)) }
+            val cw = (crop.right - crop.left).toInt().coerceAtLeast(0)
+            val ch = (crop.bottom - crop.top).toInt().coerceAtLeast(0)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            ) { Text(stringResource(R.string.lr_crop_size, cw, ch), color = Color.White) }
 
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    val left = crop.left.toInt().coerceIn(0, bitmap.width)
-                    val top = crop.top.toInt().coerceIn(0, bitmap.height)
-                    val right = crop.right.toInt().coerceIn(left + 1, bitmap.width)
-                    val bottom = crop.bottom.toInt().coerceIn(top + 1, bitmap.height)
-                    val outPath = cropBitmapToCache(
-                        src = bitmap,
-                        left = left,
-                        top = top,
-                        width = right - left,
-                        height = bottom - top,
-                        context = context,
-                    )
-                    onConfirm(outPath)
-                },
-            ) { Text(stringResource(R.string.btn_confirm_crop)) }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                LumiSecondaryButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = onRetake,
+                    label = stringResource(R.string.lr_crop_back),
+                )
+                LumiPrimaryButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        val left = crop.left.toInt().coerceIn(0, bitmap.width)
+                        val top = crop.top.toInt().coerceIn(0, bitmap.height)
+                        val right = crop.right.toInt().coerceIn(left + 1, bitmap.width)
+                        val bottom = crop.bottom.toInt().coerceIn(top + 1, bitmap.height)
+                        val outPath = cropBitmapToCache(
+                            src = bitmap, left = left, top = top,
+                            width = right - left, height = bottom - top, context = context,
+                        )
+                        onConfirm(outPath)
+                    },
+                    label = stringResource(R.string.lr_crop_use),
+                )
+            }
         }
     }
 }
@@ -316,6 +362,7 @@ private fun applyDrag(
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCornerHandle(
+    color: Color,
     x: Float,
     y: Float,
     dirX: Float,
@@ -326,19 +373,11 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCornerHandle(
     // 水平短杠:从角点沿 dirX 延伸 len
     val hx = if (dirX > 0) x else x - len
     val hy = y - width / 2f
-    drawRect(
-        color = Color.White,
-        topLeft = Offset(hx, hy),
-        size = Size(len, width),
-    )
+    drawRect(color = color, topLeft = Offset(hx, hy), size = Size(len, width))
     // 垂直短杠
     val vx = x - width / 2f
     val vy = if (dirY > 0) y else y - len
-    drawRect(
-        color = Color.White,
-        topLeft = Offset(vx, vy),
-        size = Size(width, len),
-    )
+    drawRect(color = color, topLeft = Offset(vx, vy), size = Size(width, len))
 }
 
 private fun cropBitmapToCache(

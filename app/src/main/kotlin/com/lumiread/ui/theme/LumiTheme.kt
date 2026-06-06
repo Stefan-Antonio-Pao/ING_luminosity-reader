@@ -73,7 +73,20 @@ fun LumiTheme(mode: LumiMode, ageBand: AgeBand, content: @Composable () -> Unit)
         fontWeight   = if (playfulness > 0.5f) childTokens.fontWeight else ParentTokens.fontWeight,
     )
     val effectiveTypography = if (playfulness > 0.5f) childTypography else parentTypography
-    CompositionLocalProvider(LocalLumiTokens provides tokens) {
+
+    // v3.0.0 新增:与旧 LocalLumiTokens 并存的 palette / tier / mode / reduced-motion。
+    // 新页面读这些 local;旧页面继续读 LocalLumiTokens,迁移期两套共存。
+    val palette = lumiPalette(mode)
+    val tier = tierFor(ageBand)
+    val reducedMotion = rememberReducedMotion()
+
+    CompositionLocalProvider(
+        LocalLumiTokens provides tokens,
+        LocalLumiPalette provides palette,
+        LocalTier provides tier,
+        LocalMode provides mode,
+        LocalReducedMotion provides reducedMotion,
+    ) {
         MaterialTheme(typography = effectiveTypography, content = content)
     }
 }
