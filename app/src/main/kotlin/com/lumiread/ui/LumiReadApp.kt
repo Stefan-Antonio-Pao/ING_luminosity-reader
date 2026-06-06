@@ -83,9 +83,11 @@ fun GemmaModel.displayNameRes(): Int = when (this) {
 
 @Composable
 fun LumiReadApp() {
-    // 用 remember(非 saveable):启动一律回 Kids 首页(screen-mapping 要求,不持久化 parent mode)。
-    // 进行中的会话内容由 ChatStore 持久化,首页用"继续上次"chip 召回,不靠恢复 screen 状态。
-    var screen by remember { mutableStateOf(Screen.KIDS_HOME) }
+    // rememberSaveable:跨 Activity.recreate()(切换界面语言会触发 recreate)保留当前屏 ——
+    // 修复"切换系统/界面语言后跳回首页"的 bug,语言切换后应停留在设置页。
+    // 真正的冷启动(从启动器全新打开)无 savedInstanceState → 回退到初值 KIDS_HOME,
+    // 仍满足"启动一律回 Kids、不持久化 parent mode"(saveable 只存实例态,不落盘)。
+    var screen by rememberSaveable { mutableStateOf(Screen.KIDS_HOME) }
     val lang by AppGraph.settings.langFlow.collectAsState(initial = Lang.EN)
     val age by AppGraph.settings.ageFlow.collectAsState(initial = AgeBand.PRESCHOOL)
     val effectiveOcrMode by AppGraph.settings.effectiveOcrModeFlow.collectAsState(initial = OcrMode.OCR)
