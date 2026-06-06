@@ -107,7 +107,7 @@ reading companionship reachable for families and classrooms that cloud-based app
 
 ## 3. Features
 
-What ships in v2.0.0 and is actually wired up end-to-end:
+What ships in v3.0.0 and is actually wired up end-to-end:
 
 - **Snap-a-page reading companion.** Take a single photo of a spread,
   align it inside the on-screen frame, and the app produces a spoken
@@ -119,14 +119,37 @@ What ships in v2.0.0 and is actually wired up end-to-end:
   Whenever a tool call is unavailable or fails, it **falls back to the
   two-stage text pipeline**, so the app never breaks. See §4 for the honest
   reliability and latency picture.
-- **Dual-mode UI (Kids · Parent).** A whole-app theme switch: the **Kids**
-  mode uses cartoon shapes, deep-blue + warm-gold tokens, the rounded
-  **ZCOOL KuaiLe** display font, a bouncy press feedback, and a friendly
-  mascot. The **Parent** mode collapses back to a minimal Material 3
-  surface for settings, model management, and the Learning page. A
-  lightweight **parent gate** (tap the bigger of two numbers — fully
-  offline, no password) guards the Kids → Parent transition so children
-  do not exit the cartoon shell by accident.
+- **v3.0.0 "paper-warm" redesign (Kids · Parent).** A full design-token
+  system: the **Kids** mode is a modern picture-book surface — cream paper
+  background, deep-ink + warm-gold palette, a "magic book frame", soft
+  star/dot decorations, and large child-friendly controls. The **Parent**
+  mode is a calm, restrained surface for stats, settings, model management,
+  and privacy. There is **no mascot, avatar, animal, or anthropomorphic
+  helper** anywhere in the app.
+- **Tier-aware everything (three age bands).** *Toddler · Preschool ·
+  Preadolescent* drive font sizes, button heights, corner radii, decoration
+  density, animation amplitude, prompt-chip counts, and answer length from a
+  single `Tier` system — switching is live (no Activity restart) and persisted.
+- **Full snap-to-read flow.** home → camera → crop → celebrate → thinking →
+  dialog, with a v3 **camera viewfinder** (gold corner frame, big gold
+  shutter) and an upgraded **crop screen** (gold handles, rule-of-thirds grid,
+  "select all", live pixel-size readout). The crop maps to source-image
+  coordinates and feeds the existing OCR / multimodal pipeline unchanged.
+- **Story mode (no book needed).** Three entries: snap an object, pick a story
+  opener **generated on-device by the local model** (loading / ready / fallback
+  states, "try another"), or type your own — all routed through the real model
+  pipeline.
+- **Reading dialog with free input + voice.** Free-form follow-up questions
+  enter the same session; a microphone button uses the system speech recognizer
+  (graceful fallback when unavailable); a TTS failure degrades to an inline hint
+  instead of a scary error page.
+- **Accessibility built in.** sp-based type that survives 1.5× font scaling,
+  ≥ 44 / 56 / 72–96 dp touch targets, content descriptions (the parent gate
+  reads the digits aloud), reduced-motion fallbacks, and **no scary red
+  "no network" banners in airplane mode** — everything runs locally.
+- A lightweight **parent gate** (tap the larger of the numbers — fully offline,
+  no password) still guards the Kids → Parent transition so children do not
+  leave the Kids shell by accident.
 - **Bilingual output (Chinese · English).** The output language is a
   setting inside the app and is **decoupled from the system locale** —
   a Chinese-system phone can read English pages aloud, and vice versa.
@@ -499,6 +522,29 @@ the items below are present in v2.0.0.
 ---
 
 ## 13. Changelog
+
+### v3.0.0 — "paper-warm" UI/UX redesign
+
+- **Redesigned** the entire UI on a v3 design-token system: new `LumiPalette`
+  (cream / deep-ink / warm-gold) + a `Tier` system (toddler / preschool /
+  preadolescent) driving type scale, sizing, radii, decoration density, and
+  animation amplitude; theme mode now follows navigation (Kids vs Parent).
+- **Rebuilt** every screen: Kids home, v3 camera viewfinder, upgraded crop
+  (gold handles + rule-of-thirds grid + select-all + live size), celebrate /
+  thinking transitions, reading dialog (free text input + microphone + TTS),
+  story mode (three entries, with **on-device model-generated** openers),
+  and the parent area (number gate, learning stats, settings, privacy).
+- **Removed** the mascot — no character, avatar, animal, or anthropomorphic
+  helper anywhere.
+- **Added** ~150 localized strings (zh / en); Kids mode is free of technical
+  jargon. Accessibility pass: 1.5× font-scale safe, large touch targets,
+  content descriptions, reduced-motion fallbacks, no scary offline banners.
+- **Unchanged**: the `:core` reasoning pipeline, LiteRT-LM / Gemma 4 / ML Kit /
+  sherpa-onnx integration, and DataStore/Room storage — no core API signatures
+  were touched. Story-opener generation reuses `LlmEngine.generate` with a
+  graceful fallback.
+- **Fixed**: switching the interface language no longer bounces you back to the
+  home screen (the current screen is preserved across the locale recreate).
 
 ### v2.0.0 — native function-calling refactor (backend only, UI unchanged)
 

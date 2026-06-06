@@ -19,8 +19,8 @@ android {
         applicationId = "com.lumiread"
         minSdk        = 26
         targetSdk     = 36
-        versionCode   = 1
-        versionName   = "0.1.0"
+        versionCode   = 3
+        versionName   = "3.0.0"
 
         // Phase 3 曳光弹(CLAUDE.md §B2)走 AndroidJUnitRunner,见 Gemma4EngineTracerTest。
         // 真机跑:./gradlew :app:connectedDebugAndroidTest
