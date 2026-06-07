@@ -16,6 +16,19 @@
 
 ---
 
+## 🎬 Demo Video
+
+See LumiRead in action — offline picture-book reading, on-device Gemma 4 E2B,
+warm Socratic-style companionship:
+
+**▶️ [Watch the demo on Bilibili](https://www.bilibili.com/video/BV17Q7D6HEay/)**
+
+<p align="center">
+  <a href="https://www.bilibili.com/video/BV17Q7D6HEay/"><img src="https://img.shields.io/badge/▶%20Demo-Bilibili-FB7299.svg" alt="Demo Video" /></a>
+</p>
+
+---
+
 ## 🚀 Start Here — For Everyone (No Tech Needed)
 
 New here? You don't need to know anything about code.

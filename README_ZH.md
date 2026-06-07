@@ -15,6 +15,19 @@
 
 ---
 
+## 🎬 演示视频
+
+看 LumiRead 实机演示 —— 全程离线的绘本伴读、端侧 Gemma 4 E2B、
+温暖的"博学故事伙伴"对话:
+
+**▶️ [在 Bilibili 观看演示视频](https://www.bilibili.com/video/BV17Q7D6HEay/)**
+
+<p align="center">
+  <a href="https://www.bilibili.com/video/BV17Q7D6HEay/"><img src="https://img.shields.io/badge/▶%20演示视频-Bilibili-FB7299.svg" alt="演示视频" /></a>
+</p>
+
+---
+
 ## 🚀 新手指南 · 先看这里(不懂电脑也能用)
 
 不懂代码也没关系,这一节就是给你的。
