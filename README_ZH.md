@@ -26,6 +26,9 @@
   <a href="https://www.bilibili.com/video/BV17Q7D6HEay/"><img src="https://img.shields.io/badge/▶%20演示视频-Bilibili-FB7299.svg" alt="演示视频" /></a>
 </p>
 
+> **备注:** 演示视频录制于 **v2.0.0 版本**,界面与当前版本会有所不同,
+> 但**核心功能与底层逻辑是一致的。**
+
 ---
 
 ## 🚀 新手指南 · 先看这里(不懂电脑也能用)

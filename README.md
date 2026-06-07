@@ -27,6 +27,10 @@ warm Socratic-style companionship:
   <a href="https://www.bilibili.com/video/BV17Q7D6HEay/"><img src="https://img.shields.io/badge/▶%20Demo-Bilibili-FB7299.svg" alt="Demo Video" /></a>
 </p>
 
+> **Note:** The demo was recorded on **v2.0.0**, so the UI looks a little
+> different from the current release. The **core features and underlying logic
+> are the same.**
+
 ---
 
 ## 🚀 Start Here — For Everyone (No Tech Needed)
