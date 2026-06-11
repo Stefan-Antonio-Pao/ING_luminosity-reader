@@ -74,7 +74,22 @@ class AgentOrchestrator(
             // FC 失败或空产出 → 丢弃缓冲,降级。
             onFallback(error)
         }
-        fallback.generateTurn(req).collect { emit(it) }
+        // Level 1:TwoStage。轨道 A 起它也可能失败(模型未加载/推理崩溃)——同样缓冲式收集,
+        // 失败则落到 Level 2/3 模板兜底(TemplateReading,确定性、绝不崩)。
+        val buffered = ArrayList<TurnEvent>()
+        val outcome = runCatching {
+            fallback.generateTurn(req).collect { buffered += it }
+        }
+        val error = outcome.exceptionOrNull()
+        if (error is CancellationException) throw error
+        if (error == null && buffered.any { it is TurnEvent.Chunk }) {
+            buffered.forEach { emit(it) }
+            return@flow
+        }
+        onFallback(error)
+        // Level 2(有 OCR 文本:模板朗读)/ Level 3(无文本:图像观察引导)。
+        emit(TurnEvent.Chunk(TemplateReading.message(req.lang, req.ageBand, req.ocr?.joinedText())))
+        emit(TurnEvent.Done(servedBy = EngineKind.TEMPLATE))
     }
 
     companion object {

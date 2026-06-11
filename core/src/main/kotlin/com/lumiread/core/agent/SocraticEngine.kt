@@ -83,7 +83,11 @@ sealed interface TurnEvent {
 }
 
 /** 服务一轮的引擎种类。用于 DEV_LOG / README 展示"哪条路径服务了这一轮"。 */
-enum class EngineKind { TWO_STAGE, FUNCTION_CALLING }
+enum class EngineKind {
+    TWO_STAGE, FUNCTION_CALLING,
+    /** Level 2 模板兜底(轨道 A):FC 与 TwoStage 都失败时由 [TemplateReading] 服务。 */
+    TEMPLATE,
+}
 
 /**
  * v2.0.0 Stage 3:一轮生成的可观测指标(任务书 §8 step 10)。

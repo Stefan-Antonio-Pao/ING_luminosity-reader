@@ -19,8 +19,8 @@ android {
         applicationId = "com.lumiread"
         minSdk        = 26
         targetSdk     = 36
-        versionCode   = 3
-        versionName   = "3.0.0"
+        versionCode   = 4
+        versionName   = "3.1.0"
 
         // Phase 3 曳光弹(CLAUDE.md §B2)走 AndroidJUnitRunner,见 Gemma4EngineTracerTest。
         // 真机跑:./gradlew :app:connectedDebugAndroidTest
@@ -49,6 +49,12 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    androidResources {
+        // 轨道 A 词典(FACTS#F14):SQLite asset 不压缩 —— openFd 指纹与流式复制都需要原样存储;
+        // .db 本身已 VACUUM,压缩收益小。
+        noCompress += "db"
     }
 }
 

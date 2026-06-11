@@ -28,16 +28,64 @@ enum class OcrMode { OCR, MULTIMODAL }
  */
 enum class OutputMode { MONOLINGUAL, BILINGUAL }
 
-/** OCR 单元 —— 文本 + 0~1 置信度。 */
-data class OcrLine(val text: String, val confidence: Float)
+/**
+ * 纯 Kotlin 几何类型(:core 不能引用 android.graphics,见 FACTS#F12 第 5 条)。
+ * :app 的 MlKitOcrService 负责从 `Rect`/`Point[]` 映射过来。
+ */
+data class OcrBox(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+    val width: Int get() = right - left
+    val height: Int get() = bottom - top
+    val centerX: Float get() = (left + right) / 2f
+    val centerY: Float get() = (top + bottom) / 2f
+}
 
-/** OCR 全量结果。 */
+data class OcrPoint(val x: Int, val y: Int)
+
+/** 绘本版面区域标记(OCR_TECH_DOC §6),由 LayoutNormalizer 推断。 */
+enum class PageRegion { LEFT_PAGE, RIGHT_PAGE, TOP_TITLE, BODY_TEXT, SPEECH_BUBBLE, CAPTION, PAGE_NUMBER, UNKNOWN }
+
+/**
+ * OCR 单元 —— 富结构(轨道 A,2026-06-11)。
+ *
+ * 新字段全部带默认值,保持既有调用点(`OcrLine(text, confidence)`)与 JVM 单测二进制级兼容。
+ * 字段语义对应 ML Kit `Text.Line` 真实 API(FACTS#F12,javap 核对 2026-06-11):
+ * boundingBox/cornerPoints 可空 → 这里用 null/empty 表达;angle/recognizedLanguage 同理。
+ */
+data class OcrLine(
+    val text: String,
+    /** 行级置信度 0~1。⚠ 注意 [OcrResult.confidenceAvailable]:false 时本值不可信(ML Kit 返回了 0)。 */
+    val confidence: Float,
+    val box: OcrBox? = null,
+    val cornerPoints: List<OcrPoint> = emptyList(),
+    val angle: Float? = null,
+    /** ML Kit 行级识别语种(BCP-47,如 "zh"/"en"/"und"),与全局 language-id 路由互补。 */
+    val recognizedLanguage: String? = null,
+    val pageRegion: PageRegion = PageRegion.UNKNOWN,
+)
+
+/** OCR 全量结果(轨道 A 起携带图像尺寸与置信度可用性,新字段带默认值保兼容)。 */
 data class OcrResult(
     val lines: List<OcrLine>,
     /** language-id 推断的主语种,可能与 [Lang] 不同(原文与输出语言可分离)。 */
     val detectedLang: Lang?,
+    /** 原图尺寸(px)。0 = 未知(旧调用点/Fake),LayoutNormalizer 此时退化为相对坐标推断。 */
+    val imageWidth: Int = 0,
+    val imageHeight: Int = 0,
+    /**
+     * 置信度是否真实可用。任务书 §1.1 警示:非捆绑模型/旧 Play 服务下 `getConfidence()` 恒 0。
+     * MlKitOcrService 在所有行置信度都≈0 时置 false;OcrQualityGate 据此退回启发式信号,
+     * **不得想当然把 0 当"很差"或把缺省 1f 当"很好"**。
+     */
+    val confidenceAvailable: Boolean = true,
 ) {
     fun joinedText(): String = lines.joinToString(" ") { it.text }.trim()
+
+    /** 行置信度均值(按文本长度加权,长行话语权更大);无行返回 0。 */
+    fun averageConfidence(): Float {
+        if (lines.isEmpty()) return 0f
+        val totalLen = lines.sumOf { it.text.length }.coerceAtLeast(1)
+        return lines.sumOf { (it.confidence * it.text.length).toDouble() }.toFloat() / totalLen
+    }
 }
 
 /** 图像标签 —— 名称 + 0~1 置信度。 */

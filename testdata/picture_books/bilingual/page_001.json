@@ -1,0 +1,8 @@
+{
+  "image": "page_001.jpg",
+  "expected_text": "小熊有 3 个苹果。\nThe bear has 3 apples.",
+  "language": "mixed",
+  "protected_tokens": [
+    "3"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "image": "page_001.jpg",
+  "expected_text": "Good night, little bear.",
+  "language": "en",
+  "expect_low_quality": true
+}

@@ -56,6 +56,12 @@ class Pipeline(
      * :core 默认 no-op;:app 注入记日志的 sink。
      */
     private val onMetrics: (com.lumiread.core.agent.TurnMetrics) -> Unit = {},
+    /**
+     * 轨道 A:OCR 校准管线。:core 默认无修正能力(correction=null,JVM 单测保持确定性);
+     * :app 注入带 [com.lumiread.core.ocr.OcrCorrectionStage] 的实例(Gemma 结构化修正)。
+     */
+    private val ocrPipeline: com.lumiread.core.ocr.OcrPipeline =
+        com.lumiread.core.ocr.OcrPipeline(correction = null),
 ) {
     /**
      * 跑一次完整循环。事件顺序:多个 OcrPage → Labels → 多个 LlmChunk → Done。
@@ -155,6 +161,7 @@ class Pipeline(
             autoPlayTts = autoPlayTts,
             outputMode = outputMode,
             onMetrics = onMetrics,
+            ocrPipeline = ocrPipeline,
         )
     }
 }

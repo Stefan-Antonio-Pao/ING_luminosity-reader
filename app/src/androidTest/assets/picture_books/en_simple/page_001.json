@@ -1,0 +1,10 @@
+{
+  "image": "page_001.jpg",
+  "expected_text": "The little bear is looking for his mum.\nHe walks under the warm sun.",
+  "language": "en",
+  "forbidden_hallucinations": [
+    "forest",
+    "rabbit",
+    "school"
+  ]
+}

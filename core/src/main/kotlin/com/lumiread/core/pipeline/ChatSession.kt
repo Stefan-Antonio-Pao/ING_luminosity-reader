@@ -12,6 +12,7 @@ import com.lumiread.core.agent.SocraticEngine
 import com.lumiread.core.agent.TurnEvent
 import com.lumiread.core.agent.TurnMetrics
 import com.lumiread.core.agent.TurnRequest
+import com.lumiread.core.ocr.OcrPipeline
 import com.lumiread.core.prompt.SocraticPromptBuilder
 import com.lumiread.core.tts.TtsEngine
 import com.lumiread.core.vision.ImageLabelService
@@ -84,6 +85,12 @@ class ChatSession internal constructor(
      * 首字延迟 / 生成总耗时)。core 保持 Android-free,具体落地(记日志)由 :app 注入。默认 no-op。
      */
     private val onMetrics: (TurnMetrics) -> Unit = {},
+    /**
+     * 轨道 A(2026-06-11):OCR 校准管线(LayoutNormalizer → QualityGate → 修正 → Validator)。
+     * 所有带图 OCR 轮的文本必须流经 [OcrPipeline.prepare] 再进 prompt;质量太差时直接发
+     * 确定性重拍提示(不喂 LLM、不朗读 OCR 原文)。
+     */
+    private val ocrPipeline: OcrPipeline = OcrPipeline(correction = null),
 ) : AutoCloseable {
 
     private data class HistoryEntry(val user: String, val assistant: String)
@@ -104,7 +111,9 @@ class ChatSession internal constructor(
                 OcrMode.OCR -> {
                     val (ocrResults, mergedLabels) = processImages(images)
                     send(ChatEvent.TurnContext(ocrResults, mergedLabels))
-                    val combinedOcr = mergeOcr(ocrResults)
+                    // 轨道 A:OCR 静默校准管线(排序/质量门控/保守修正/校验)。
+                    // 全程不打断:不可信文本静默丢弃改聊画面,绝无"重拍提示"弹话。
+                    val combinedOcr = ocrForPrompt(ocrPipeline.prepare(ocrResults, lang))
                     val userText = SocraticPromptBuilder.firstTurnContent(
                         ocr = combinedOcr,
                         labels = mergedLabels,
@@ -157,7 +166,8 @@ class ChatSession internal constructor(
                     if (images.isNotEmpty()) {
                         val (ocrResults, lbs) = processImages(images)
                         send(ChatEvent.TurnContext(ocrResults, lbs))
-                        combinedOcr = mergeOcr(ocrResults)
+                        // 轨道 A:带新图的后续轮同样走静默校准管线。
+                        combinedOcr = ocrForPrompt(ocrPipeline.prepare(ocrResults, lang))
                         mergedLabels = lbs
                     } else {
                         combinedOcr = null
@@ -295,6 +305,12 @@ class ChatSession internal constructor(
             history.removeAt(0)
         }
         send(ChatEvent.AssistantDone(full))
+    }
+
+    /** 从静默校准管线结果取下游 prompt 用的 OCR(ImageOnly = 空文本,prompt 已有"无文字"路径)。 */
+    private fun ocrForPrompt(outcome: OcrPipeline.Outcome): OcrResult = when (outcome) {
+        is OcrPipeline.Outcome.Proceed -> outcome.ocrForPrompt
+        is OcrPipeline.Outcome.ImageOnly -> OcrResult(emptyList(), null)
     }
 
     private fun buildPromptWithHistory(currentUser: String): String {

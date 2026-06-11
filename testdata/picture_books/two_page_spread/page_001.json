@@ -1,0 +1,9 @@
+{
+  "image": "page_001.jpg",
+  "expected_text": "Left page: the bear wakes up.\nRight page: he eats honey.",
+  "language": "en",
+  "page_numbers_to_exclude": [
+    "8",
+    "9"
+  ]
+}

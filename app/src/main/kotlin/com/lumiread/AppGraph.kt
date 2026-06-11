@@ -5,7 +5,7 @@ import android.util.Log
 import com.lumiread.core.agent.AgentOrchestrator
 import com.lumiread.core.agent.SocraticEngine
 import com.lumiread.core.agent.TwoStagePipelineEngine
-import com.lumiread.core.data.EmptyOfflineDictionary
+import com.lumiread.data.SqliteOfflineDictionary
 import com.lumiread.core.llm.FakeLlmEngine
 import com.lumiread.core.llm.LlmEngine
 import com.lumiread.core.pipeline.Pipeline
@@ -76,6 +76,10 @@ object AppGraph {
     val pipeline: Pipeline by lazy {
         Pipeline(
             ocr, labels, llm, tts, buildSocraticEngine(),
+            // 轨道 A:OCR 校准管线(LayoutNormalizer→QualityGate→Gemma 结构化修正→Validator)。
+            ocrPipeline = com.lumiread.core.ocr.OcrPipeline(
+                correction = com.lumiread.core.ocr.OcrCorrectionStage(llm),
+            ),
             onMetrics = { m ->
                 // v2.0.0 Stage 3:每轮 served-by / 工具 / 延迟落日志(演示 agentic 闭环 + 喂 README)。
                 Log.i(
@@ -93,14 +97,14 @@ object AppGraph {
      *    (currentModel 动态读 `gemma.activeModel()`,用户切模型即时生效)。
      *  - Fake 模式 / 非 Gemma4Engine:直接 TwoStage(无工具),不引入 FC。
      *
-     * 词典暂用 [EmptyOfflineDictionary](Step 7 换真实 WordNet/CC-CEDICT);`read_aloud` 暂只记日志
+     * 词典 = 随包 SQLite(WordNet + CC-CEDICT,轨道 A FACTS#F14);`read_aloud` 暂只记日志
      * (最终回答由 ChatSession autoPlay 朗读,避免重复朗读)。
      */
     private fun buildSocraticEngine(): SocraticEngine {
         val gemma = _llm as? Gemma4Engine ?: return TwoStagePipelineEngine(_llm)
         val fc = FunctionCallingEngine(
             provider = gemma,
-            dict = EmptyOfflineDictionary,
+            dict = SqliteOfflineDictionary(_appContext),
             onReadAloud = { text -> Log.i(TAG, "read_aloud 请求(仅记录,不重复朗读):$text") },
         )
         val twoStage = TwoStagePipelineEngine(_llm)

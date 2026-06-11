@@ -1,0 +1,10 @@
+{
+  "image": "page_001.jpg",
+  "expected_text": "小熊在找妈妈。\n太阳暖暖地照着他。",
+  "language": "zh",
+  "forbidden_hallucinations": [
+    "森林",
+    "兔子",
+    "学校"
+  ]
+}

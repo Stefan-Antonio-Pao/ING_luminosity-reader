@@ -43,3 +43,25 @@ interface OfflineDictionary {
 object EmptyOfflineDictionary : OfflineDictionary {
     override fun lookup(term: String, lang: Lang): DictEntry? = null
 }
+
+/**
+ * 词典 DB 契约(轨道 A,FACTS#F14)——:app 的 SQLiteOfflineDictionary 与 :core 的 JVM 硬验证单测
+ * **共用同一条 SQL 与同一套词条规范化**,保证"单测验证的就是真机查询的"(任务书 §1.3 硬验证门)。
+ */
+object DictDbContract {
+    const val ASSET_PATH = "dict/lumi_dict.db"
+
+    /** 参数:1=term(已规范化) 2=lang("EN"/"ZH")。 */
+    const val QUERY = "SELECT term, definition, example FROM entries WHERE term = ? AND lang = ? LIMIT 1"
+
+    /** 词条规范化:trim;英文小写(WordNet lemma 全小写);中文原样。 */
+    fun normalizeTerm(term: String, lang: Lang): String {
+        val t = term.trim()
+        return if (lang == Lang.EN) t.lowercase() else t
+    }
+
+    fun langCode(lang: Lang): String = when (lang) {
+        Lang.EN -> "EN"
+        Lang.ZH -> "ZH"
+    }
+}

@@ -124,11 +124,20 @@ reading companionship reachable for families and classrooms that cloud-based app
 
 ## 3. Features
 
-What ships in v3.0.0 and is actually wired up end-to-end:
+What ships in v3.1.0 and is actually wired up end-to-end:
 
 - **Snap-a-page reading companion.** Take a single photo of a spread,
   align it inside the on-screen frame, and the app produces a spoken
   "praise → explanation → invitation" reply tied to what is visible.
+- **Silent OCR calibration (v3.1.0).** Every photo passes through layout
+  normalization (reading order, two-page-spread splitting, page-number
+  removal), a confidence quality gate, a conservative on-device Gemma
+  correction stage, and a deterministic validator that protects numbers,
+  names and quoted text. All silent: bad text is repaired or quietly
+  dropped — the child is never interrupted by "please retake" prompts.
+- **Real offline dictionary (v3.1.0).** `lookup_word` is now backed by a
+  bundled ~31 MB SQLite database built from WordNet 3.1 (English) and
+  CC-CEDICT (Chinese) — real definitions, age-shaped, fully offline.
 - **Native Gemma 4 function calling (with graceful fallback).** On a new
   photo the model can **natively call an on-device tool** to classify the
   scene (storybook page vs real-world object) and adapt its reply — real
@@ -206,12 +215,25 @@ results. The earlier "OCR → concatenated text → text model" flow is **no lon
 main path** — it is kept as the **fallback backbone** that guarantees the experience
 when function calling isn't available or doesn't pan out.
 
-**Runtime flow.**
+**Runtime flow.** Since **v3.1.0** every OCR result first passes through a **silent
+calibration pipeline** — layout normalization, a confidence quality gate, a conservative
+Gemma-powered correction stage, and a deterministic validator that protects numbers,
+names and quoted text from being "corrected". All of it is invisible to the child: bad
+text is silently repaired or silently dropped (the companion just talks about the
+picture instead), never interrupted with error prompts.
 
 ```mermaid
 flowchart TD
     A[CameraX · single capture] --> B[ML Kit on-device OCR + image labeling]
-    B --> C{AgentOrchestrator · model & complexity policy}
+    B --> N[LayoutNormalizer · reading order, two-page split, page-number removal]
+    N --> Q{OcrQualityGate · confidence or heuristics}
+    Q -- "high (≥0.88)" --> C
+    Q -- "mid (0.40–0.88)" --> X[OcrCorrectionStage · Gemma fixes obvious OCR errors, JSON-constrained]
+    Q -- "unusable (<0.40)" --> Y[silently drop text · talk about the picture]
+    X --> V{OcrCorrectionValidator · numbers / names / quotes protected}
+    V -- "accepted" --> C
+    V -- "rejected → keep raw text" --> C
+    Y --> C{AgentOrchestrator · model & complexity policy}
     C -- "E4B: tools always-on" --> D[FunctionCallingEngine · manual tool loop]
     C -- "E2B: scene is complex" --> D
     C -- "E2B simple / multimodal turn" --> F[TwoStagePipelineEngine · fallback backbone]
@@ -220,9 +242,11 @@ flowchart TD
     G --> H[Feed the tool result back to the model]
     H --> I[Model produces the final age-appropriate reply]
     E -- "invalid / silent-drop / timeout / not called" --> F
+    F -- "model unavailable too" --> T[TemplateReading · deterministic template, never crashes]
     I --> J[sherpa-onnx · VITS MeloTTS zh_en]
     F --> J
-    J --> K[Child hears an age-appropriate question]
+    T --> J
+    J --> K[Child hears an age-appropriate reply]
 ```
 
 **This is genuinely native function calling**, not string parsing. It goes through
@@ -237,10 +261,13 @@ in this release**:
 - **`classify_scene(image_labels, ocr_text)`** — *fully working.* Decides whether the
   photo is a storybook page or a real-world object, so the companion either reads along
   or explains the object.
-- **`lookup_word(term)`** — registered and callable, but **this release ships no offline
-  dictionary**. It currently returns an age-appropriate *"let's figure it out together"*
-  response rather than a database definition. (No word database is bundled — see the
-  honest note below.)
+- **`lookup_word(term)`** — *fully working since v3.1.0.* Backed by a **real offline
+  dictionary bundled in the APK**: WordNet 3.1 (≈147k English entries) + CC-CEDICT
+  (≈188k Chinese entries), compiled into a ~31 MB SQLite database at build time
+  (`scripts/build_dict.py`). Definitions are age-shaped before reaching the child
+  (toddler gets one sentence; preadolescent gets the full gloss). A miss degrades
+  gracefully to an age-appropriate *"let's figure it out together"* — the model never
+  fabricates a definition.
 - **`read_aloud(text)`** — registered and callable, but replies are already narrated by
   the always-on TTS layer, so this tool's effect is intentionally minimal in this release.
 
@@ -249,11 +276,14 @@ in this release**:
 ```mermaid
 flowchart LR
     UI["app · UI (unchanged)"] --> CS[ChatSession · per-session orchestration]
+    CS --> OP["OcrPipeline · LayoutNormalizer → QualityGate → CorrectionStage → Validator"]
     CS --> SE["SocraticEngine (interface)"]
-    SE -. "implemented by" .-> ORCH[AgentOrchestrator · model policy + fallback]
+    SE -. "implemented by" .-> ORCH[AgentOrchestrator · model policy + 4-level fallback]
     ORCH --> FCE[FunctionCallingEngine · manual tool loop]
     ORCH --> TSE[TwoStagePipelineEngine · fallback backbone]
+    ORCH --> TPL[TemplateReading · deterministic last resort]
     FCE --> TR["tools: classify_scene / lookup_word / read_aloud"]
+    TR --> DICT["SqliteOfflineDictionary · WordNet + CC-CEDICT, bundled"]
     FCE --> EP["EngineProvider · Gemma4Engine: E2B/E4B + GPU→CPU"]
     TSE --> EP
     CS --> PR["prompt: three age personas + OCR self-correction"]
@@ -282,8 +312,21 @@ explicit latency warning.
 yet fully reliable**: a structured eval measured Gemma 4 E2B tool-call pass rate at about
 **71%**, dropping with more arguments. So **any** failure — invalid tool call, silent
 drop, timeout, failed validation, or the model simply not calling — **falls back to the
-two-stage text pipeline automatically**, and the app never crashes. Function calling is
+two-stage text pipeline automatically**, and the app never crashes. Since v3.1.0 the
+chain has **four levels**: function calling → two-stage text → deterministic template
+reading (when the model itself is unavailable) → image-only guidance. Function calling is
 the highlight; **the reliable baseline is guaranteed by the fallback.**
+
+**Silent OCR calibration (v3.1.0, honest).** Children's books are photographed at odd
+angles, in bedroom light, across two-page spreads. The calibration pipeline fixes what it
+can and *never* nags: layout is re-ordered (left page before right, page numbers
+removed), mid-confidence text goes through a JSON-constrained conservative correction
+("litt1e → little" yes; rewriting the story no), and a deterministic validator rejects
+any "correction" that touches numbers, names or quoted text — falling back to the raw
+OCR. Text below the trust floor is silently dropped and the companion talks about the
+picture instead. Quality signals go to logcat only, never to the child. On our self-made
+8-category test set (clear/low-light/curved/two-page/speech-bubble/…) clear pages measure
+0–6% character error rate with page numbers correctly excluded.
 
 **Performance note (honest).** Usable function-calling latency depends on the GPU backend
 (~52 tok/s officially). On our test phone (a Snapdragon device) the GPU backend **did not
@@ -407,7 +450,23 @@ release APK either — they live entirely on the end user's device.
 For end-user testing without an in-app download, `adb push` the files to
 `/sdcard/Android/data/com.lumiread/files/` as shown in §6.3.
 
-### 7.5 Build &amp; run
+### 7.5 (Optional) Rebuild the offline dictionary
+
+The repository already contains the compiled dictionary at
+`app/src/main/assets/dict/lumi_dict.db` (~31 MB, WordNet 3.1 + CC-CEDICT),
+so a normal build needs nothing extra. To rebuild it from the original
+sources (e.g. to pick up a newer CC-CEDICT snapshot):
+
+```bash
+mkdir -p dict_sources && cd dict_sources
+curl -O https://wordnetcode.princeton.edu/wn3.1.dict.tar.gz
+tar xzf wn3.1.dict.tar.gz
+curl -O https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz
+cd ..
+python scripts/build_dict.py   # writes app/src/main/assets/dict/lumi_dict.db
+```
+
+### 7.6 Build &amp; run
 
 ```bash
 # Debug build, install on a connected device:
@@ -521,14 +580,11 @@ Before submitting:
 ## 12. Roadmap
 
 Things we would like to build next, but **have not built yet**. None of
-the items below are present in v2.0.0.
+the items below are present in v3.1.0.
 
 - **Age-specific research.** Conduct targeted studies and surveys with
   children across age groups to learn which output styles and UI designs
   each age responds to best, and optimize accordingly in future releases.
-- **Offline dictionary for `lookup_word`** (e.g. WordNet / CC-CEDICT) so
-  the tool returns real definitions instead of a fallback. *(Planned — not
-  in this release.)*
 - **Windows port** via UWP, sharing the `:core` pipeline. *(Planned.)*
 - **Per-page bookmark / dialog history** the child can revisit later.
 - **Parent-side weekly summary** generated locally and exported as PDF.
@@ -539,6 +595,42 @@ the items below are present in v2.0.0.
 ---
 
 ## 13. Changelog
+
+### v3.1.0 — silent OCR calibration + real offline dictionary (backend only, UI unchanged)
+
+- **Added** a silent OCR calibration pipeline in `:core/ocr`:
+  - `LayoutNormalizer` — picture-book reading order (top-to-bottom, left page before
+    right on two-page spreads), page-number exclusion, skewed-decoration filtering;
+  - `OcrQualityGate` — confidence thresholds (accept ≥0.88 / correct 0.40–0.88 /
+    silently drop <0.40) with **automatic heuristic fallback when ML Kit reports no
+    usable confidence** (older Play-services paths report 0);
+  - `OcrCorrectionStage` — Gemma fixes obvious OCR errors via JSON-constrained
+    structured generation (not a tool chain), with fully defensive parsing: malformed
+    JSON, truncation, or model errors all degrade to the raw text, never crash;
+  - `OcrCorrectionValidator` + `ProtectedTokenDetector` — deterministic guards that
+    reject any "correction" touching numbers, names, dates or quoted text, reject
+    rewrites/expansions (length & word-level-diff caps), and verify the model's declared
+    changes actually exist in the source (anti-hallucination diff).
+- **Calibration is silent by design**: no retake prompts, no error bubbles — untrusted
+  text is silently repaired or silently dropped (the companion talks about the picture);
+  quality signals go to logcat only.
+- **Added** a real offline dictionary for `lookup_word`: WordNet 3.1 (English, ≈147k
+  entries, WordNet License) + CC-CEDICT (Chinese, ≈188k entries, CC BY-SA 4.0, published
+  by MDBG) compiled into a ~31 MB SQLite asset by `scripts/build_dict.py`; definitions
+  are age-shaped, misses degrade gracefully, and the database is **hard-verified** by JVM
+  and on-device tests that share the exact production query (`caterpillar` / `毛毛虫`
+  must return the real WordNet / CC-CEDICT entries).
+- **Added** a fourth fallback level: when both function calling and the two-stage text
+  pipeline fail (e.g. model not yet downloaded), a deterministic `TemplateReading` still
+  reads the page text and asks one age-appropriate question — the app never dead-ends.
+- **Added** a self-made (copyright-free, script-rendered) 8-category picture-book OCR
+  test set under `testdata/` plus an on-device metrics test (CER/WER, page-number
+  exclusion, protected-token survival, confidence availability).
+- **Richer OCR structure**: `OcrLine` now carries bounding box, corner points, angle,
+  per-line recognized language and page region; `MlKitOcrService` no longer fakes
+  confidence as 1.0 when ML Kit omits it.
+- **Unchanged**: UI, the three-tool set (still exactly 3), language/age settings, TTS,
+  voice input, parent area; models still download on first launch (not bundled).
 
 ### v3.0.0 — "paper-warm" UI/UX redesign
 

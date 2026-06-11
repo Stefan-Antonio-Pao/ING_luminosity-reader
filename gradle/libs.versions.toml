@@ -32,12 +32,17 @@ litertlm            = "0.12.0"
 datastore           = "1.1.1"
 room                = "2.6.1"
 
+# JSON 解析(轨道 A OCR 修正,FACTS#F13,核对自 repo.maven.apache.org 2026-06-11)
+serialization-json  = "1.11.0"
+
 # 测试
 junit               = "4.13.2"
 coroutines          = "1.9.0"
 # AndroidX 仪表化测试(Phase 3 曳光弹)—— 核对自 dl.google.com maven-metadata.xml,2026-05-24
 androidx-test-ext   = "1.3.0"     # androidx.test.ext:junit
 androidx-test-runner = "1.7.0"    # androidx.test:runner
+# 词典硬验证 JVM 单测用(FACTS#F14,核对自 repo.maven.apache.org 2026-06-11)
+sqlite-jdbc         = "3.53.2.0"
 
 [libraries]
 # AndroidX
@@ -73,6 +78,9 @@ androidx-room-runtime          = { group = "androidx.room",      name = "room-ru
 androidx-room-ktx              = { group = "androidx.room",      name = "room-ktx",              version.ref = "room" }
 androidx-room-compiler         = { group = "androidx.room",      name = "room-compiler",         version.ref = "room" }
 
+# JSON —— FACTS#F13,只用运行时树解析,不需要编译器插件
+kotlinx-serialization-json     = { group = "org.jetbrains.kotlinx",                  name = "kotlinx-serialization-json",        version.ref = "serialization-json" }
+
 # 测试
 junit4                         = { group = "junit",                                  name = "junit",                             version.ref = "junit" }
 kotlinx-coroutines-test        = { group = "org.jetbrains.kotlinx",                  name = "kotlinx-coroutines-test",           version.ref = "coroutines" }
@@ -80,6 +88,7 @@ kotlinx-coroutines-core        = { group = "org.jetbrains.kotlinx",             
 # AndroidX 仪表化测试 —— Phase 3 曳光弹(CLAUDE.md §B2),只用于 :app androidTest
 androidx-test-ext-junit        = { group = "androidx.test.ext",                      name = "junit",                             version.ref = "androidx-test-ext" }
 androidx-test-runner           = { group = "androidx.test",                          name = "runner",                            version.ref = "androidx-test-runner" }
+sqlite-jdbc                    = { group = "org.xerial",                             name = "sqlite-jdbc",                       version.ref = "sqlite-jdbc" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

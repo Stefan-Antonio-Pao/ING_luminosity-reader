@@ -125,6 +125,9 @@ All of the following are licensed under the **Apache License, Version 2.0**.
   https://github.com/JetBrains/kotlin
 - `org.jetbrains.kotlinx:kotlinx-coroutines-core` —
   https://github.com/Kotlin/kotlinx.coroutines
+- `org.jetbrains.kotlinx:kotlinx-serialization-json` (defensive JSON parsing of
+  the on-device OCR-correction output) —
+  https://github.com/Kotlin/kotlinx.serialization
 
 **Copyright holder:** JetBrains s.r.o. and Kotlin contributors.
 
@@ -154,7 +157,44 @@ All of the following are licensed under the **Apache License, Version 2.0**.
 
 ---
 
-## 6. Test-only dependencies
+## 6. Offline dictionary data (bundled inside the APK)
+
+### WordNet 3.1 (English lexical database)
+- **Used for:** the on-device `lookup_word` tool — English child-friendly word
+  definitions are served from WordNet glosses, converted at build time into a
+  SQLite database (`assets/dict/lumi_dict.db`) by `scripts/build_dict.py`.
+- **Copyright holder:** Princeton University. *WordNet 3.1 Copyright 2011 by
+  Princeton University. All rights reserved.*
+- **License:** WordNet License (BSD-style). Permission to use, copy, modify and
+  distribute is granted provided the copyright notice and statements, including
+  the disclaimer, appear on all copies. THIS SOFTWARE AND DATABASE IS PROVIDED
+  "AS IS" AND PRINCETON UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES,
+  EXPRESS OR IMPLIED. The name of Princeton University or Princeton may not be
+  used in advertising or publicity pertaining to distribution of the software
+  and/or database.
+- **Source:** https://wordnet.princeton.edu/ (database files
+  `wn3.1.dict.tar.gz` from https://wordnetcode.princeton.edu/, verified
+  2026-06-11).
+
+### CC-CEDICT (Chinese–English dictionary)
+- **Used for:** the on-device `lookup_word` tool — Chinese word definitions are
+  served from CC-CEDICT entries, converted into the same bundled SQLite
+  database as above.
+- **Attribution (required by license):** CC-CEDICT, a community-maintained free
+  Chinese–English dictionary, **published by MDBG**
+  (https://www.mdbg.net/chinese/dictionary?page=cc-cedict). Based on CEDICT,
+  Copyright (C) 1997, 1998 Paul Andrew Denisowski. Project page:
+  https://cc-cedict.org/wiki/.
+- **License:** Creative Commons Attribution-ShareAlike 4.0 International
+  (CC BY-SA 4.0), https://creativecommons.org/licenses/by-sa/4.0/. The
+  dictionary data extracted from CC-CEDICT inside `lumi_dict.db` remains
+  available under the same CC BY-SA 4.0 terms (ShareAlike).
+- **Snapshot:** `cedict_1_0_ts_utf-8_mdbg.txt.gz`, dated 2026-06-10
+  (downloaded and verified 2026-06-11).
+
+---
+
+## 7. Test-only dependencies
 
 ### JUnit 4 (`junit:junit:4.13.2`)
 - **License:** Eclipse Public License 1.0.
@@ -167,6 +207,12 @@ All of the following are licensed under the **Apache License, Version 2.0**.
   https://developer.android.com/jetpack/androidx/releases/test
   https://github.com/Kotlin/kotlinx.coroutines
 - **Scope:** instrumented / unit test only — does not ship inside the released APK.
+
+### sqlite-jdbc (`org.xerial:sqlite-jdbc:3.53.2.0`)
+- **License:** Apache License, Version 2.0.
+- **Source:** https://github.com/xerial/sqlite-jdbc
+- **Scope:** JVM unit tests only (dictionary hard-verification) — does not ship
+  inside the released APK.
 
 ---
 

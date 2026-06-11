@@ -13,7 +13,11 @@ java {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
+    // OCR 修正 JSON 防御式解析(FACTS#F13)。只用 Json.parseToJsonElement 树解析,无编译器插件。
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlinx.coroutines.test)
+    // 词典硬验证(任务书 §1.3):JVM 直接打开随包 SQLite,断言 caterpillar/毛毛虫 真实词条。
+    testImplementation(libs.sqlite.jdbc)
 }
